@@ -11,7 +11,7 @@ import (
 type OAuth2Service struct {
 	authRepository            *repositories.AuthRepository
 	passwordCredentialService *oauth2authorizationservices.PasswordCredetialService
-	authCodeService *oauth2authorizationservices.AuthCodeService
+	authCodeService           *oauth2authorizationservices.AuthCodeService
 }
 
 func NewOAuth2Service() *OAuth2Service {
@@ -28,7 +28,6 @@ func (s *OAuth2Service) Login(grantType, redirectUri string, request *requests.O
 		res, err = s.passwordCredentialService.Login(*request)
 
 	case string(requests.GrantTypeAuthCode):
-		res, err := s.
 		break
 	}
 	return
