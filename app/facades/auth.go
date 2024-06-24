@@ -24,7 +24,7 @@ func ValidMAC(key []byte) {
 	HmacSecret = mac.Sum(nil)
 }
 
-func GenerateToken(secret string, userId uint) (string, error) {
+func GenerateToken(secret string, userId, expiredDuration uint) (string, error) {
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
 
@@ -36,7 +36,7 @@ func GenerateToken(secret string, userId uint) (string, error) {
 		userId,
 		jwt.RegisteredClaims{
 			// A usual scenario is to set the expiration time relative to the current time
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(expiredDuration) * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
 		},
@@ -66,6 +66,9 @@ func RandomString(n int) string {
 }
 
 func ParseToken(tokenString, secret string) (token *jwt.Token, err error) {
+	if secret == "" {
+		secret = os.Getenv("JWT_SECRET")
+	}
 	token, err = jwt.ParseWithClaims(tokenString, &CustomClaim{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(secret), nil
 	})

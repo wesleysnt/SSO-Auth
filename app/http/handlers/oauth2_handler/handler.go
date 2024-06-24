@@ -10,18 +10,18 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type AuthHandler struct {
-	authService *services.AuthService
+type OAuth2Handler struct {
+	authService *services.OAuth2Service
 }
 
-func NewAuthHandler() *AuthHandler {
-	return &AuthHandler{
-		authService: services.NewAuthService(),
+func NewAuthHandler() *OAuth2Handler {
+	return &OAuth2Handler{
+		authService: services.NewOAuth2Service(),
 	}
 }
 
-func (h *AuthHandler) Register(c *fiber.Ctx) error {
-	data := requests.AuthRequest{}
+func (h *OAuth2Handler) Register(c *fiber.Ctx) error {
+	data := requests.OAuth2Request{}
 
 	c.BodyParser(&data)
 
@@ -44,10 +44,10 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	return helpers.ResponseApiCreated(c, "User created", nil)
 }
 
-func (h *AuthHandler) Login(c *fiber.Ctx) (err error) {
+func (h *OAuth2Handler) Login(c *fiber.Ctx) (err error) {
 	grantType := c.Query("grant_type", "")
 	redirectUri := c.Query("redirect_uri", "")
-	data := requests.LoginRequest{}
+	data := requests.OAuth2LoginRequest{}
 
 	c.BodyParser(&data)
 
@@ -76,5 +76,5 @@ func (h *AuthHandler) Login(c *fiber.Ctx) (err error) {
 
 		return helpers.ResponseApiError(c, catchErr.Message, catchErr.StatusCode, nil)
 	}
-	return helpers.ResponseApiCreated(c, "Successfully to create data", res)
+	return helpers.ResponseApiCreated(c, "Login successful", res)
 }

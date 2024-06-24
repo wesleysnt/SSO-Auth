@@ -4,6 +4,9 @@ CREATE TABLE refresh_tokens(
     user_id BIGINT,
     client_id BIGINT,
     expiry_time TIMESTAMP,
+    created_at timestamp NULL,
+    updated_at timestamp NULL,
+    deleted_at timestamp NULL,
 
     CONSTRAINT fk_client_id
     FOREIGN KEY(client_id)
