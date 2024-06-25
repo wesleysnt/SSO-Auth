@@ -1,8 +1,8 @@
 package seeders
 
-func RegisterSeeder() {
-	// admin seeder
-
+func Execute() error {
 	adminSeeder := AdminSeeder{}
 	adminSeeder.Run()
+
+	return nil
 }

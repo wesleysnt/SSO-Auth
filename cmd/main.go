@@ -2,11 +2,11 @@ package main
 
 import (
 	"log"
+	"os"
 	"sso-auth/app/configs"
-	"sso-auth/app/database/seeders"
 	"sso-auth/app/helpers"
 	"sso-auth/app/routes"
-	"sso-auth/cmd/cli"
+	"sso-auth/cmd/cli/commands"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -20,7 +20,13 @@ func main() {
 	}
 
 	configApp := configs.LoadAppConfig()
-	cli.Execute()
+
+	if len(os.Args) >= 2 {
+		configs.ConnectDB()
+		commands.Execute()
+		return
+	}
+
 	app := fiber.New(fiber.Config{
 		CaseSensitive:         true,
 		StrictRouting:         true,
@@ -39,7 +45,6 @@ func main() {
 
 	configs.ConnectDB()
 
-	seeders.RegisterSeeder()
 	routes.RegisterRoutes(app)
 	log.Fatal(app.Listen(":" + configApp.AppPort))
 
