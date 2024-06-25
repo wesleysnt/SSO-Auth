@@ -69,7 +69,18 @@ func init() {
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
+<<<<<<< HEAD
 	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+=======
+<<<<<<< HEAD
+>>>>>>> a58c1e7 (add many functions into commands)
 	cobra.OnInitialize()
+=======
+<<<<<<< HEAD
+	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+=======
+	cobra.OnInitialize()
+>>>>>>> 336b74a (add many functions into commands)
+>>>>>>> 191288f (add many functions into commands)
 }
