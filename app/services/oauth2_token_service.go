@@ -11,7 +11,11 @@ import (
 =======
 	"sso-auth/app/http/requests"
 	"sso-auth/app/responses"
+<<<<<<< HEAD
 >>>>>>> 325f9fc (.)
+=======
+>>>>>>> ec32a2f (.)
+>>>>>>> 7a7a01f (.)
 	oauth2authorizationservices "sso-auth/app/services/oauth2_authorization_services"
 )
 
@@ -24,7 +28,11 @@ type Oauth2TokenService struct {
 =======
 	authCodeService  *oauth2authorizationservices.AuthCodeService
 	clientCredential *oauth2authorizationservices.ClientCredentialService
+<<<<<<< HEAD
 >>>>>>> 325f9fc (.)
+=======
+>>>>>>> ec32a2f (.)
+>>>>>>> 7a7a01f (.)
 }
 
 func NewOauth2TokenService() *Oauth2TokenService {
@@ -47,7 +55,11 @@ func (s *Oauth2TokenService) Token(request *requests.TokenRequest) (res *respons
 
 func (s *Oauth2TokenService) Token(request *requests.TokenRequest, grantType, redirectUri string) (res *responses.TokenResponse, err error) {
 	switch grantType {
+<<<<<<< HEAD
 >>>>>>> 325f9fc (.)
+=======
+>>>>>>> ec32a2f (.)
+>>>>>>> 7a7a01f (.)
 	case string(requests.GrantTypeAuthCode):
 		res, err = s.authCodeService.Token(request)
 	case string(requests.GrantTypeClientCredential):
@@ -178,4 +190,8 @@ func (s *Oauth2TokenService) RefreshToken(request *requests.RefreshTokenRequest)
 	return &res, err
 }
 =======
+<<<<<<< HEAD
 >>>>>>> 325f9fc (.)
+=======
+>>>>>>> ec32a2f (.)
+>>>>>>> 7a7a01f (.)

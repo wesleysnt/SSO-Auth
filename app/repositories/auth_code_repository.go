@@ -43,4 +43,8 @@ func (r *AuthCodeRepository) GetHistory(scan any, page, limit int, sort string) 
 	return &pagination, res.Error
 }
 =======
+<<<<<<< HEAD
 >>>>>>> 325f9fc (.)
+=======
+>>>>>>> ec32a2f (.)
+>>>>>>> 7a7a01f (.)

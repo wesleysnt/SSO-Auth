@@ -50,4 +50,8 @@ func (r *AuthRepository) List(scan *[]models.User, page, limit int, sort string)
 	return &pagination, err.Error
 }
 =======
+<<<<<<< HEAD
 >>>>>>> 325f9fc (.)
+=======
+>>>>>>> ec32a2f (.)
+>>>>>>> 7a7a01f (.)

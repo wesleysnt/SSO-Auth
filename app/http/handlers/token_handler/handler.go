@@ -25,7 +25,11 @@ func (h *TokenHandler) Token(c *fiber.Ctx) (err error) {
 =======
 	grantType := c.Query("grant_type", "")
 	redirectUri := c.Query("redirect_uri", "")
+<<<<<<< HEAD
 >>>>>>> 325f9fc (.)
+=======
+>>>>>>> ec32a2f (.)
+>>>>>>> 7a7a01f (.)
 	data := requests.TokenRequest{}
 
 	c.BodyParser(&data)
@@ -42,7 +46,11 @@ func (h *TokenHandler) Token(c *fiber.Ctx) (err error) {
 
 	}
 
+<<<<<<< HEAD
 >>>>>>> 325f9fc (.)
+=======
+>>>>>>> ec32a2f (.)
+>>>>>>> 7a7a01f (.)
 	pkg.NewValidator()
 	err = pkg.Validate(data)
 
@@ -55,7 +63,11 @@ func (h *TokenHandler) Token(c *fiber.Ctx) (err error) {
 	res, err := h.tokenService.Token(&data)
 =======
 	res, err := h.tokenService.Token(&data, grantType, redirectUri)
+<<<<<<< HEAD
 >>>>>>> 325f9fc (.)
+=======
+>>>>>>> ec32a2f (.)
+>>>>>>> 7a7a01f (.)
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)
 		catchErr := helpers.CatchErrorResponseApi(respErr)
@@ -96,4 +108,8 @@ func (h *TokenHandler) RefreshToken(c *fiber.Ctx) (err error) {
 	return helpers.ResponseApiCreated(c, "Token refreshed successfully", res)
 }
 =======
+<<<<<<< HEAD
 >>>>>>> 325f9fc (.)
+=======
+>>>>>>> ec32a2f (.)
+>>>>>>> 7a7a01f (.)

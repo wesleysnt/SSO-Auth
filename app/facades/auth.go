@@ -29,7 +29,11 @@ func ValidMAC(key []byte) {
 func GenerateToken(secret string, userId, clientId, expiredDuration uint) (string, error) {
 =======
 func GenerateToken(secret string, userId, expiredDuration, clientId uint) (string, error) {
+<<<<<<< HEAD
 >>>>>>> 325f9fc (.)
+=======
+>>>>>>> ec32a2f (.)
+>>>>>>> 7a7a01f (.)
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
 

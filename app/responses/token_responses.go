@@ -4,7 +4,11 @@ package responses
 import "github.com/golang-jwt/jwt/v5"
 
 =======
+<<<<<<< HEAD
 >>>>>>> 325f9fc (.)
+=======
+>>>>>>> ec32a2f (.)
+>>>>>>> 7a7a01f (.)
 type TokenResponse struct {
 	AccessToken  AccessToken  `json:"access_token"`
 	RefreshToken RefreshToken `json:"refresh_token"`
@@ -19,4 +23,8 @@ type ValidateTokenResponse struct {
 	UserId   uint            `json:"user_id"`
 }
 =======
+<<<<<<< HEAD
 >>>>>>> 325f9fc (.)
+=======
+>>>>>>> ec32a2f (.)
+>>>>>>> 7a7a01f (.)
