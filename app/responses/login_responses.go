@@ -1,8 +1,6 @@
 package responses
 
 import (
-	"time"
-
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -18,18 +16,20 @@ type LoginResponses struct {
 	Email        string       `json:"email"`
 	AccessToken  AccessToken  `json:"access_token"`
 	RefreshToken RefreshToken `json:"refresh_token"`
+	RedirectUri  string       `json:"redirect_uri"`
 }
 
 type LoginResponsesAuthCode struct {
-	Id       uint     `json:"id"`
-	Username string   `json:"username"`
-	Email    string   `json:"email"`
-	AuthCode AuthCode `json:"auth_code"`
+	Id          uint     `json:"id"`
+	Username    string   `json:"username"`
+	Email       string   `json:"email"`
+	AuthCode    AuthCode `json:"auth_code"`
+	RedirectUri string   `json:"redirect_uri"`
 }
 
 type AuthCode struct {
-	Code       string    `json:"code"`
-	ExpiryTime time.Time `json:"expiry_time"`
+	Code       string `json:"code"`
+	ExpiryTime int64  `json:"expiry_time"`
 }
 
 type AccessToken struct {

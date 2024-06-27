@@ -15,7 +15,9 @@ type OAuth2Request struct {
 }
 
 type OAuth2LoginRequest struct {
-	Username string `validate:"required" form:"username" json:"username"`
-	Password string `validate:"required" form:"password" json:"password"`
-	ClientId uint   `validate:"" form:"client_id" json:"client_id"`
+	Username    string `validate:"required" form:"username" json:"username"`
+	Password    string `validate:"required" form:"password" json:"password"`
+	ClientId    uint   `validate:"" form:"client_id" json:"client_id"`
+	GrantType   string `validate:"required" form:"grant_type" json:"grant_type"`
+	RedirectUri string `validate:"" form:"redirect_uri" json:"redirect_uri"`
 }
