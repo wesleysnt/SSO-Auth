@@ -26,7 +26,7 @@ func NewPasswordCredentialService() *PasswordCredetialService {
 	}
 }
 
-func (s *PasswordCredetialService) Login(request requests.OAuth2LoginRequest) (*responses.LoginResponses, error) {
+func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest) (any, error) {
 	var clientData models.Client
 	err := s.clientRepository.GetById(&clientData, request.ClientId)
 
@@ -57,7 +57,7 @@ func (s *PasswordCredetialService) Login(request requests.OAuth2LoginRequest) (*
 	}
 
 	// Generate access token
-	tokenString, err := facades.GenerateToken(clientData.Secret, userData.ID, 2)
+	tokenString, err := facades.GenerateToken(clientData.Secret, userData.ID, clientData.ID, 2)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -93,7 +93,7 @@ func (s *PasswordCredetialService) Login(request requests.OAuth2LoginRequest) (*
 
 	// Generate Refresh Token
 
-	refreshTokenString, err := facades.GenerateToken(clientData.Secret, userData.ID, 4)
+	refreshTokenString, err := facades.GenerateToken(clientData.Secret, userData.ID, clientData.ID, 4)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -118,10 +118,15 @@ func (s *PasswordCredetialService) Login(request requests.OAuth2LoginRequest) (*
 		}
 	}
 
+	redirectUri := clientData.RedirectUri
+	if request.RedirectUri != "" {
+		redirectUri = request.RedirectUri
+	}
 	res := responses.LoginResponses{
-		Id:       userData.ID,
-		Username: userData.Username,
-		Email:    userData.Email,
+		Id:          userData.ID,
+		Username:    userData.Username,
+		Email:       userData.Email,
+		RedirectUri: redirectUri,
 		AccessToken: responses.AccessToken{
 			Token:      tokenString,
 			ExpiryTime: tokenExpired,

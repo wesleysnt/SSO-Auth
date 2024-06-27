@@ -4,31 +4,31 @@ import (
 	"sso-auth/app/http/requests"
 	"sso-auth/app/models"
 	"sso-auth/app/repositories"
-	"sso-auth/app/responses"
-	oauth2authorizationservices "sso-auth/app/services/oauth2_authorization_services"
+	oauth2authorizeservices "sso-auth/app/services/oauth2_authorization_services"
 )
 
 type OAuth2Service struct {
 	authRepository            *repositories.AuthRepository
-	passwordCredentialService *oauth2authorizationservices.PasswordCredetialService
-	authCodeService           *oauth2authorizationservices.AuthCodeService
+	passwordCredentialService *oauth2authorizeservices.PasswordCredetialService
+	authCodeService           *oauth2authorizeservices.AuthCodeService
 }
 
 func NewOAuth2Service() *OAuth2Service {
 	return &OAuth2Service{
 		authRepository:            repositories.NewAuthRepository(),
-		passwordCredentialService: oauth2authorizationservices.NewPasswordCredentialService(),
+		passwordCredentialService: oauth2authorizeservices.NewPasswordCredentialService(),
+		authCodeService:           oauth2authorizeservices.NewAuthCodeService(),
 	}
 }
 
-func (s *OAuth2Service) Login(grantType, redirectUri string, request *requests.OAuth2LoginRequest) (res *responses.LoginResponses, err error) {
+func (s *OAuth2Service) Login(request *requests.OAuth2LoginRequest) (res any, err error) {
 
-	switch grantType {
+	switch request.GrantType {
 	case string(requests.GrantTypePasswordCredential):
-		res, err = s.passwordCredentialService.Login(*request)
+		res, err = s.passwordCredentialService.Login(request)
 
 	case string(requests.GrantTypeAuthCode):
-		break
+		res, err = s.authCodeService.Login(request)
 	}
 	return
 }

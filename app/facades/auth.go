@@ -15,7 +15,8 @@ import (
 var HmacSecret []byte
 
 type CustomClaim struct {
-	UserId uint `json:"user_id"`
+	UserId   uint `json:"user_id"`
+	ClientId uint `json:"client_id"`
 	jwt.RegisteredClaims
 }
 
@@ -24,7 +25,7 @@ func ValidMAC(key []byte) {
 	HmacSecret = mac.Sum(nil)
 }
 
-func GenerateToken(secret string, userId, expiredDuration uint) (string, error) {
+func GenerateToken(secret string, userId, expiredDuration, clientId uint) (string, error) {
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
 
@@ -34,6 +35,7 @@ func GenerateToken(secret string, userId, expiredDuration uint) (string, error) 
 
 	claim := CustomClaim{
 		userId,
+		clientId,
 		jwt.RegisteredClaims{
 			// A usual scenario is to set the expiration time relative to the current time
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(expiredDuration) * time.Hour)),

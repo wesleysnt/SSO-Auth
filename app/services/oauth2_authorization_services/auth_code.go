@@ -12,20 +12,24 @@ import (
 )
 
 type AuthCodeService struct {
-	clientRepository   *repositories.ClientRepository
-	authRepository     *repositories.AuthRepository
-	authCodeRepository *repositories.AuthCodeRepository
+	clientRepository       *repositories.ClientRepository
+	authRepository         *repositories.AuthRepository
+	authCodeRepository     *repositories.AuthCodeRepository
+	accessTokenRepository  *repositories.AccessTokenRepository
+	refreshTokenRepository *repositories.RefreshTokenRepository
 }
 
 func NewAuthCodeService() *AuthCodeService {
 	return &AuthCodeService{
-		clientRepository:   repositories.NewClientRepository(),
-		authRepository:     repositories.NewAuthRepository(),
-		authCodeRepository: repositories.NewAuthCodeRepository(),
+		clientRepository:       repositories.NewClientRepository(),
+		authRepository:         repositories.NewAuthRepository(),
+		authCodeRepository:     repositories.NewAuthCodeRepository(),
+		accessTokenRepository:  repositories.NewAccessTokenRepository(),
+		refreshTokenRepository: repositories.NewRefreshTokenRepository(),
 	}
 }
 
-func (s *AuthCodeService) Login(request requests.OAuth2LoginRequest) (*responses.LoginResponsesAuthCode, error) {
+func (s *AuthCodeService) Login(request *requests.OAuth2LoginRequest) (any, error) {
 	var clientData models.Client
 	err := s.clientRepository.GetById(&clientData, request.ClientId)
 
@@ -70,7 +74,7 @@ func (s *AuthCodeService) Login(request requests.OAuth2LoginRequest) (*responses
 		Email:    userData.Email,
 		AuthCode: responses.AuthCode{
 			Code:       *authCodeData.Code,
-			ExpiryTime: authCodeData.ExpiryTime,
+			ExpiryTime: authCodeData.ExpiryTime.Unix(),
 		},
 	}
 
@@ -79,6 +83,122 @@ func (s *AuthCodeService) Login(request requests.OAuth2LoginRequest) (*responses
 			Status:  schemas.ApiErrorForbidden,
 			Message: err.Error(),
 		}
+	}
+
+	return &res, nil
+}
+
+func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.TokenResponse, error) {
+	var authCode models.AuthCode
+
+	var clientData models.Client
+	err := s.clientRepository.GetById(&clientData, request.ClientId)
+
+	if err != nil {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorNotFound,
+			Message: "Client not found!",
+		}
+	}
+
+	var userData models.User
+
+	err = s.authRepository.GetById(&userData, request.UserId)
+	if err != nil {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorNotFound,
+			Message: "User not found!",
+		}
+	}
+
+	err = s.authCodeRepository.GetCode(request.AuthCode, request.UserId, request.ClientId, &authCode)
+
+	if err != nil {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorUnprocessAble,
+			Message: "authorization code is invalid or unvailable",
+		}
+	}
+	if time.Now().After(authCode.ExpiryTime) {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorBadRequest,
+			Message: "authorization code is expired",
+		}
+	}
+
+	// Generate access token
+	tokenString, err := facades.GenerateToken(clientData.Secret, userData.ID, clientData.ID, 2)
+
+	if err != nil {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorUnprocessAble,
+			Message: "Something went wrong when generating access token",
+		}
+	}
+
+	token, err := facades.ParseToken(tokenString, clientData.Secret)
+
+	if err != nil {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorUnprocessAble,
+			Message: err.Error(),
+		}
+	}
+
+	tokenExpired, _ := token.Claims.GetExpirationTime()
+
+	errSaveToken := s.accessTokenRepository.Create(&models.AccessToken{
+		Token:      tokenString,
+		UserId:     userData.ID,
+		ClientId:   clientData.ID,
+		ExpiryTime: tokenExpired.Time,
+	})
+
+	if errSaveToken != nil {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorUnprocessAble,
+			Message: errSaveToken.Error(),
+		}
+	}
+
+	// Generate Refresh Token
+
+	refreshTokenString, err := facades.GenerateToken(clientData.Secret, userData.ID, clientData.ID, 4)
+
+	if err != nil {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorUnprocessAble,
+			Message: "Something went wrong when generating refresh token",
+		}
+	}
+
+	refreshTokenExpired, _ := token.Claims.GetExpirationTime()
+
+	errSaveRefreshToken := s.refreshTokenRepository.Create(&models.RefreshToken{
+		Token:      refreshTokenString,
+		UserId:     userData.ID,
+		ClientId:   clientData.ID,
+		ExpiryTime: refreshTokenExpired.Time,
+	})
+
+	if errSaveRefreshToken != nil {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorUnprocessAble,
+			Message: errSaveRefreshToken.Error(),
+		}
+	}
+
+	res := responses.TokenResponse{
+
+		AccessToken: responses.AccessToken{
+			Token:      tokenString,
+			ExpiryTime: tokenExpired,
+		},
+		RefreshToken: responses.RefreshToken{
+			Token:      refreshTokenString,
+			ExpiryTime: refreshTokenExpired,
+		},
+		Scope: request.AuthCode,
 	}
 
 	return &res, nil

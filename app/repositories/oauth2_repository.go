@@ -26,3 +26,8 @@ func (r *AuthRepository) GetUser(data *models.User, username string) error {
 	res := r.orm.Where("username = ?", username).First(&data)
 	return res.Error
 }
+
+func (r *AuthRepository) GetById(data *models.User, id uint) error {
+	res := r.orm.Where("id = ?", id).First(&data)
+	return res.Error
+}
