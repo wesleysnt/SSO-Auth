@@ -32,6 +32,7 @@ func (r *AuthRepository) GetById(data *models.User, id uint) error {
 	res := r.orm.Where("id = ?", id).First(&data)
 	return res.Error
 }
+<<<<<<< HEAD
 
 func (r *AuthRepository) List(scan *[]models.User, page, limit int, sort string) (*utils.Pagination, error) {
 	var pagination utils.Pagination
@@ -48,3 +49,5 @@ func (r *AuthRepository) List(scan *[]models.User, page, limit int, sort string)
 
 	return &pagination, err.Error
 }
+=======
+>>>>>>> 325f9fc (.)

@@ -1,24 +1,35 @@
 package services
 
 import (
+<<<<<<< HEAD
 	"sso-auth/app/facades"
 	"sso-auth/app/http/requests"
 	"sso-auth/app/models"
 	"sso-auth/app/repositories"
 	"sso-auth/app/responses"
 	"sso-auth/app/schemas"
+=======
+	"sso-auth/app/http/requests"
+	"sso-auth/app/responses"
+>>>>>>> 325f9fc (.)
 	oauth2authorizationservices "sso-auth/app/services/oauth2_authorization_services"
 )
 
 type Oauth2TokenService struct {
+<<<<<<< HEAD
 	authCodeService        *oauth2authorizationservices.AuthCodeService
 	clientCredential       *oauth2authorizationservices.ClientCredentialService
 	refreshTokenRepository *repositories.RefreshTokenRepository
 	accessTokenRepository  *repositories.AccessTokenRepository
+=======
+	authCodeService  *oauth2authorizationservices.AuthCodeService
+	clientCredential *oauth2authorizationservices.ClientCredentialService
+>>>>>>> 325f9fc (.)
 }
 
 func NewOauth2TokenService() *Oauth2TokenService {
 	return &Oauth2TokenService{
+<<<<<<< HEAD
 		authCodeService:        oauth2authorizationservices.NewAuthCodeService(),
 		clientCredential:       oauth2authorizationservices.NewClientCredentialService(),
 		refreshTokenRepository: repositories.NewRefreshTokenRepository(),
@@ -28,6 +39,15 @@ func NewOauth2TokenService() *Oauth2TokenService {
 
 func (s *Oauth2TokenService) Token(request *requests.TokenRequest) (res *responses.TokenResponse, err error) {
 	switch request.GrantType {
+=======
+		authCodeService:  oauth2authorizationservices.NewAuthCodeService(),
+		clientCredential: oauth2authorizationservices.NewClientCredentialService(),
+	}
+}
+
+func (s *Oauth2TokenService) Token(request *requests.TokenRequest, grantType, redirectUri string) (res *responses.TokenResponse, err error) {
+	switch grantType {
+>>>>>>> 325f9fc (.)
 	case string(requests.GrantTypeAuthCode):
 		res, err = s.authCodeService.Token(request)
 	case string(requests.GrantTypeClientCredential):
@@ -37,6 +57,7 @@ func (s *Oauth2TokenService) Token(request *requests.TokenRequest) (res *respons
 	return
 
 }
+<<<<<<< HEAD
 
 func (s *Oauth2TokenService) ValidateToken(request *requests.ValidateTokenRequest) (res responses.ValidateTokenResponse, err error) {
 	token, err := facades.ParseToken(request.Token, request.Secret)
@@ -156,3 +177,5 @@ func (s *Oauth2TokenService) RefreshToken(request *requests.RefreshTokenRequest)
 
 	return &res, err
 }
+=======
+>>>>>>> 325f9fc (.)

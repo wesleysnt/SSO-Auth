@@ -6,7 +6,10 @@ import (
 	historyhandler "sso-auth/app/http/handlers/history_handler"
 	oauth2handler "sso-auth/app/http/handlers/oauth2_handler"
 	tokenhandler "sso-auth/app/http/handlers/token_handler"
+<<<<<<< HEAD
 	userhandler "sso-auth/app/http/handlers/user_handler"
+=======
+>>>>>>> 325f9fc (.)
 	"sso-auth/pkg"
 
 	"github.com/gofiber/fiber/v2"

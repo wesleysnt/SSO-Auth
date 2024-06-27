@@ -21,10 +21,28 @@ func NewTokenHandler() *TokenHandler {
 }
 
 func (h *TokenHandler) Token(c *fiber.Ctx) (err error) {
+<<<<<<< HEAD
+=======
+	grantType := c.Query("grant_type", "")
+	redirectUri := c.Query("redirect_uri", "")
+>>>>>>> 325f9fc (.)
 	data := requests.TokenRequest{}
 
 	c.BodyParser(&data)
 
+<<<<<<< HEAD
+=======
+	if grantType == "" {
+		return helpers.ResponseApiBadRequest(c, "Grant type is required", nil)
+
+	}
+
+	if redirectUri == "" {
+		return helpers.ResponseApiBadRequest(c, "Redirect uri is required", nil)
+
+	}
+
+>>>>>>> 325f9fc (.)
 	pkg.NewValidator()
 	err = pkg.Validate(data)
 
@@ -33,7 +51,11 @@ func (h *TokenHandler) Token(c *fiber.Ctx) (err error) {
 
 	}
 
+<<<<<<< HEAD
 	res, err := h.tokenService.Token(&data)
+=======
+	res, err := h.tokenService.Token(&data, grantType, redirectUri)
+>>>>>>> 325f9fc (.)
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)
 		catchErr := helpers.CatchErrorResponseApi(respErr)
@@ -42,6 +64,7 @@ func (h *TokenHandler) Token(c *fiber.Ctx) (err error) {
 	}
 	return helpers.ResponseApiCreated(c, "Login successful", res)
 }
+<<<<<<< HEAD
 
 func (h *TokenHandler) ValidateToken(c *fiber.Ctx) (err error) {
 	data := requests.ValidateTokenRequest{}
@@ -72,3 +95,5 @@ func (h *TokenHandler) RefreshToken(c *fiber.Ctx) (err error) {
 	}
 	return helpers.ResponseApiCreated(c, "Token refreshed successfully", res)
 }
+=======
+>>>>>>> 325f9fc (.)

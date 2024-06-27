@@ -8,6 +8,9 @@ func TokenRoute(route fiber.Router) {
 	auth := route.Group("/oauth2")
 
 	auth.Post("/token", handler.Token)
+<<<<<<< HEAD
 	auth.Post("/validate-token", handler.ValidateToken)
 	auth.Post("/refresh-token", handler.RefreshToken)
+=======
+>>>>>>> 325f9fc (.)
 }

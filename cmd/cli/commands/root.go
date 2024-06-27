@@ -9,6 +9,7 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
+<<<<<<< HEAD:cmd/cli/commands/root.go
 	Use:   "sso",
 	Short: "A brief description of your application",
 	Long: `A longer description that spans multiple lines and likely contains
@@ -20,6 +21,11 @@ to quickly create a Cobra application.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
+=======
+	Run: func(command *cobra.Command, args []string) {
+		fmt.Print("")
+	},
+>>>>>>> 325f9fc (.):cmd/cli/root.go
 }
 
 // Use: "wekekeke",
@@ -52,9 +58,14 @@ func init() {
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
+<<<<<<< HEAD:cmd/cli/commands/root.go
 <<<<<<< HEAD
 	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 =======
 	cobra.OnInitialize()
 >>>>>>> 336b74a (add many functions into commands)
+=======
+	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	addSubCommand()
+>>>>>>> 325f9fc (.):cmd/cli/root.go
 }

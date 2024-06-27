@@ -25,7 +25,11 @@ func ValidMAC(key []byte) {
 	HmacSecret = mac.Sum(nil)
 }
 
+<<<<<<< HEAD
 func GenerateToken(secret string, userId, clientId, expiredDuration uint) (string, error) {
+=======
+func GenerateToken(secret string, userId, expiredDuration, clientId uint) (string, error) {
+>>>>>>> 325f9fc (.)
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
 

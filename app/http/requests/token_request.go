@@ -7,6 +7,7 @@ type TokenRequest struct {
 	Scope     string `form:"scope" json:"scope"`
 	GrantType string `validate:"required" form:"grant_type" json:"grant_type"`
 }
+<<<<<<< HEAD
 
 type ValidateTokenRequest struct {
 	Token  string `validate:"required" form:"token" json:"token"`
@@ -19,3 +20,5 @@ type RefreshTokenRequest struct {
 	ClientId     uint   `validate:"required" form:"client_id" json:"client_id"`
 	UserId       uint   `validate:"required" form:"user_id" json:"user_id"`
 }
+=======
+>>>>>>> 325f9fc (.)

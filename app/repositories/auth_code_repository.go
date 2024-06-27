@@ -27,6 +27,7 @@ func (r *AuthCodeRepository) GetCode(code string, userId, clientId uint, authCod
 	res := r.orm.Where("code", code).Where("client_id", clientId).Where("user_id", userId).First(&authCode)
 	return res.Error
 }
+<<<<<<< HEAD
 
 func (r *AuthCodeRepository) GetHistory(scan any, page, limit int, sort string) (*utils.Pagination, error) {
 	var pagination utils.Pagination
@@ -41,3 +42,5 @@ func (r *AuthCodeRepository) GetHistory(scan any, page, limit int, sort string) 
 
 	return &pagination, res.Error
 }
+=======
+>>>>>>> 325f9fc (.)
