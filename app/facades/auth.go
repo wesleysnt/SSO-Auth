@@ -25,14 +25,13 @@ func ValidMAC(key []byte) {
 	HmacSecret = mac.Sum(nil)
 }
 
-func GenerateToken(secret string, userId, expiredDuration, clientId uint) (string, error) {
+func GenerateToken(secret string, userId, clientId, expiredDuration uint) (string, error) {
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
 
 	if secret == "" {
 		secret = os.Getenv("JWT_SECRET")
 	}
-
 	claim := CustomClaim{
 		userId,
 		clientId,
@@ -71,6 +70,7 @@ func ParseToken(tokenString, secret string) (token *jwt.Token, err error) {
 	if secret == "" {
 		secret = os.Getenv("JWT_SECRET")
 	}
+
 	token, err = jwt.ParseWithClaims(tokenString, &CustomClaim{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(secret), nil
 	})
