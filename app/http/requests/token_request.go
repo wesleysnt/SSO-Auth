@@ -7,3 +7,8 @@ type TokenRequest struct {
 	Scope     string `form:"scope" json:"scope"`
 	GrantType string `validate:"required" form:"grant_type" json:"grant_type"`
 }
+
+type ValidateTokenRequest struct {
+	Token  string `validate:"required" form:"token" json:"token"`
+	Secret string `validate:"required" form:"secret" json:"secret"`
+}

@@ -8,4 +8,5 @@ func TokenRoute(route fiber.Router) {
 	auth := route.Group("/oauth2")
 
 	auth.Post("/token", handler.Token)
+	auth.Post("/validate-token", handler.ValidateToken)
 }
