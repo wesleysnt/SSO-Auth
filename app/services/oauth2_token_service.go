@@ -5,8 +5,6 @@ import (
 	"sso-auth/app/http/requests"
 	"sso-auth/app/responses"
 	oauth2authorizationservices "sso-auth/app/services/oauth2_authorization_services"
-
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type Oauth2TokenService struct {
@@ -33,11 +31,21 @@ func (s *Oauth2TokenService) Token(request *requests.TokenRequest) (res *respons
 
 }
 
-func (s *Oauth2TokenService) ValidateToken(request *requests.ValidateTokenRequest) (token *jwt.Token, err error) {
-	token, err = facades.ParseToken(request.Token, request.Secret)
+func (s *Oauth2TokenService) ValidateToken(request *requests.ValidateTokenRequest) (res responses.ValidateTokenResponse, err error) {
+	token, err := facades.ParseToken(request.Token, request.Secret)
 
 	if err != nil {
 		return
+	}
+
+	tokenExp, _ := token.Claims.GetExpirationTime()
+	clientId, _ := facades.GetClientIdFromToken(request.Token, request.Secret)
+	userId, _ := facades.GetUserIdFromToken(request.Token, request.Secret)
+	res = responses.ValidateTokenResponse{
+		Active:   true,
+		Exp:      *tokenExp,
+		ClientId: clientId,
+		UserId:   userId,
 	}
 
 	return

@@ -85,3 +85,23 @@ func ParseToken(tokenString, secret string) (token *jwt.Token, err error) {
 	return
 
 }
+
+func GetUserIdFromToken(tokenString, secret string) (uint, error) {
+	token, err := ParseToken(tokenString, secret)
+	if err != nil {
+		return 0, err
+	}
+
+	claims := token.Claims.(*CustomClaim)
+	return claims.UserId, nil
+}
+
+func GetClientIdFromToken(tokenString, secret string) (uint, error) {
+	token, err := ParseToken(tokenString, secret)
+	if err != nil {
+		return 0, err
+	}
+
+	claims := token.Claims.(*CustomClaim)
+	return claims.ClientId, nil
+}
