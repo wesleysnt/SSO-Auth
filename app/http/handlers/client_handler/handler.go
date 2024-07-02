@@ -102,14 +102,7 @@ func (h *ClientHandler) Update(c *fiber.Ctx) error {
 }
 
 func (h *ClientHandler) GenerateSecret(c *fiber.Ctx) error {
-	clientId, _ := c.ParamsInt("id", 0)
-	secret, error := h.clientService.GenerateSecret(uint(clientId))
-
-	if error != nil {
-		respErr := error.(*schemas.ResponseApiError)
-		catchErr := helpers.CatchErrorResponseApi(respErr)
-		return helpers.ResponseApiError(c, catchErr.Message, catchErr.StatusCode, nil)
-	}
+	secret := h.clientService.GenerateSecret()
 
 	return helpers.ResponseApiOk(c, "OK", secret)
 }

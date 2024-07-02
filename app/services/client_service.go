@@ -125,22 +125,8 @@ func (s *ClientService) Update(clientId uint, request *requests.ClientRequest) e
 	return nil
 }
 
-func (s *ClientService) GenerateSecret(clientId uint) (string, error) {
-	secret := facades.RandomString(32)
-	data := &models.Client{
-		Secret: secret,
-	}
-
-	err := s.clientRepository.Update(data, clientId)
-
-	if err != nil {
-		return "", &schemas.ResponseApiError{
-			Status:  schemas.ApiErrorUnprocessAble,
-			Message: "Something went wrong while updating client secret",
-		}
-	}
-
-	return secret, nil
+func (s *ClientService) GenerateSecret() string {
+	return facades.RandomString(32)
 }
 
 func (s *ClientService) Delete(clientId uint) error {
