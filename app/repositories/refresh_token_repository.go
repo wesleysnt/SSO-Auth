@@ -36,3 +36,12 @@ func (r *RefreshTokenRepository) GetHistory(scan any, page, limit int, sort stri
 
 	return &pagination, res.Error
 }
+
+func (r *RefreshTokenRepository) Check(token string, clientId, userId uint) error {
+	var refreshToken models.RefreshToken
+	res := r.orm.Where("token = ? and client_id = ? and user_id = ?", token, clientId, userId).First(&refreshToken)
+	if res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
