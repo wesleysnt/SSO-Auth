@@ -9,4 +9,5 @@ func TokenRoute(route fiber.Router) {
 
 	auth.Post("/token", handler.Token)
 	auth.Post("/validate-token", handler.ValidateToken)
+	auth.Post("/refresh-token", handler.RefreshToken)
 }
