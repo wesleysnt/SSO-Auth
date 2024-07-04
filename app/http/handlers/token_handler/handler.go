@@ -57,3 +57,18 @@ func (h *TokenHandler) ValidateToken(c *fiber.Ctx) (err error) {
 	}
 	return helpers.ResponseApiOk(c, "Token is valid", res)
 }
+
+func (h *TokenHandler) RefreshToken(c *fiber.Ctx) (err error) {
+	data := requests.RefreshTokenRequest{}
+
+	c.BodyParser(&data)
+
+	res, err := h.tokenService.RefreshToken(&data)
+	if err != nil {
+		respErr := err.(*schemas.ResponseApiError)
+		catchErr := helpers.CatchErrorResponseApi(respErr)
+
+		return helpers.ResponseApiError(c, catchErr.Message, catchErr.StatusCode, nil)
+	}
+	return helpers.ResponseApiCreated(c, "Token refreshed successfully", res)
+}
