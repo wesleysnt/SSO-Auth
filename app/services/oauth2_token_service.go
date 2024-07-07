@@ -8,6 +8,8 @@ import (
 	"sso-auth/app/responses"
 	"sso-auth/app/schemas"
 	oauth2authorizationservices "sso-auth/app/services/oauth2_authorization_services"
+
+	"github.com/gookit/goutil/dump"
 )
 
 type Oauth2TokenService struct {
@@ -42,6 +44,11 @@ func (s *Oauth2TokenService) ValidateToken(request *requests.ValidateTokenReques
 	token, err := facades.ParseToken(request.Token, request.Secret)
 
 	if err != nil {
+		dump.P(err)
+		err = &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorBadRequest,
+			Message: err.Error(),
+		}
 		return
 	}
 
