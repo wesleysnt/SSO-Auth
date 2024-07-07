@@ -42,7 +42,6 @@ func CreateUp(fileName, time string) {
 		fmt.Println(err)
 		return
 	}
-
 	_, err = f.WriteString(stubs.PostgresqlStubs{}.CreateUp())
 	if err != nil {
 		fmt.Println(err)

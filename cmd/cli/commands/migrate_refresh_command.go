@@ -19,7 +19,7 @@ var migrateRefreshCmd = &cobra.Command{
 			return
 		}
 
-		err = m.Drop()
+		err = m.Down()
 		if err != nil {
 			color.Redf("error drop: %v \n", err)
 			return

@@ -12,20 +12,22 @@ import (
 )
 
 type AuthCodeService struct {
-	clientRepository       *repositories.ClientRepository
-	authRepository         *repositories.AuthRepository
-	authCodeRepository     *repositories.AuthCodeRepository
-	accessTokenRepository  *repositories.AccessTokenRepository
-	refreshTokenRepository *repositories.RefreshTokenRepository
+	clientRepository           *repositories.ClientRepository
+	authRepository             *repositories.AuthRepository
+	authCodeRepository         *repositories.AuthCodeRepository
+	accessTokenRepository      *repositories.AccessTokenRepository
+	refreshTokenRepository     *repositories.RefreshTokenRepository
+	createUserClientLogService *CreateUserClientLogService
 }
 
 func NewAuthCodeService() *AuthCodeService {
 	return &AuthCodeService{
-		clientRepository:       repositories.NewClientRepository(),
-		authRepository:         repositories.NewAuthRepository(),
-		authCodeRepository:     repositories.NewAuthCodeRepository(),
-		accessTokenRepository:  repositories.NewAccessTokenRepository(),
-		refreshTokenRepository: repositories.NewRefreshTokenRepository(),
+		clientRepository:           repositories.NewClientRepository(),
+		authRepository:             repositories.NewAuthRepository(),
+		authCodeRepository:         repositories.NewAuthCodeRepository(),
+		accessTokenRepository:      repositories.NewAccessTokenRepository(),
+		refreshTokenRepository:     repositories.NewRefreshTokenRepository(),
+		createUserClientLogService: NewCreateUserClientLogService(),
 	}
 }
 
@@ -41,7 +43,7 @@ func (s *AuthCodeService) Login(request *requests.OAuth2LoginRequest) (any, erro
 	}
 
 	var userData models.User
-	err = s.authRepository.GetUser(&userData, request.Username)
+	err = s.authRepository.GetUser(&userData, request.Email)
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorForbidden,
@@ -69,9 +71,9 @@ func (s *AuthCodeService) Login(request *requests.OAuth2LoginRequest) (any, erro
 	err = s.authCodeRepository.Create(&authCodeData)
 
 	res := responses.LoginResponsesAuthCode{
-		Id:       authCodeData.UserId,
-		Username: userData.Username,
-		Email:    userData.Email,
+		Id:    authCodeData.UserId,
+		Name:  userData.Name,
+		Email: userData.Email,
 		AuthCode: responses.AuthCode{
 			Code:       *authCodeData.Code,
 			ExpiryTime: authCodeData.ExpiryTime.Unix(),
@@ -185,6 +187,15 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.Toke
 		return nil, &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorUnprocessAble,
 			Message: errSaveRefreshToken.Error(),
+		}
+	}
+
+	err = s.createUserClientLogService.Create(userData.ID, clientData.ID)
+
+	if err != nil {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorUnprocessAble,
+			Message: err.Error(),
 		}
 	}
 

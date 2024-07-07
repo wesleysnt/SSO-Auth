@@ -12,7 +12,7 @@ type AdminLoginResponses struct {
 
 type LoginResponses struct {
 	Id           uint         `json:"id"`
-	Username     string       `json:"username"`
+	Name         string       `json:"name"`
 	Email        string       `json:"email"`
 	AccessToken  AccessToken  `json:"access_token"`
 	RefreshToken RefreshToken `json:"refresh_token"`
@@ -21,7 +21,7 @@ type LoginResponses struct {
 
 type LoginResponsesAuthCode struct {
 	Id          uint     `json:"id"`
-	Username    string   `json:"username"`
+	Name        string   `json:"name"`
 	Email       string   `json:"email"`
 	AuthCode    AuthCode `json:"auth_code"`
 	RedirectUri string   `json:"redirect_uri"`

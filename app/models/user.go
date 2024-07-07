@@ -9,9 +9,11 @@ import (
 
 type User struct {
 	ID        uint   `gorm:"primarKey"`
-	Username  string `gorm:"uniqueIndex"`
 	Email     string `gorm:"uniqueIndex"`
 	Password  string
+	Name      string
+	Phone     string
+	IsActive  bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt

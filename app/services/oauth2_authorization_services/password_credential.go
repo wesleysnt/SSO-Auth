@@ -11,18 +11,20 @@ import (
 )
 
 type PasswordCredetialService struct {
-	clientRepository       *repositories.ClientRepository
-	authRepository         *repositories.AuthRepository
-	accessTokenRepository  *repositories.AccessTokenRepository
-	refreshTokenRepository *repositories.RefreshTokenRepository
+	clientRepository           *repositories.ClientRepository
+	authRepository             *repositories.AuthRepository
+	accessTokenRepository      *repositories.AccessTokenRepository
+	refreshTokenRepository     *repositories.RefreshTokenRepository
+	createUserClientLogService *CreateUserClientLogService
 }
 
 func NewPasswordCredentialService() *PasswordCredetialService {
 	return &PasswordCredetialService{
-		clientRepository:       repositories.NewClientRepository(),
-		authRepository:         repositories.NewAuthRepository(),
-		accessTokenRepository:  repositories.NewAccessTokenRepository(),
-		refreshTokenRepository: repositories.NewRefreshTokenRepository(),
+		clientRepository:           repositories.NewClientRepository(),
+		authRepository:             repositories.NewAuthRepository(),
+		accessTokenRepository:      repositories.NewAccessTokenRepository(),
+		refreshTokenRepository:     repositories.NewRefreshTokenRepository(),
+		createUserClientLogService: NewCreateUserClientLogService(),
 	}
 }
 
@@ -39,7 +41,7 @@ func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest) (
 
 	var userData models.User
 
-	err = s.authRepository.GetUser(&userData, request.Username)
+	err = s.authRepository.GetUser(&userData, request.Email)
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorForbidden,
@@ -124,7 +126,7 @@ func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest) (
 	}
 	res := responses.LoginResponses{
 		Id:          userData.ID,
-		Username:    userData.Username,
+		Name:        userData.Name,
 		Email:       userData.Email,
 		RedirectUri: redirectUri,
 		AccessToken: responses.AccessToken{
@@ -135,6 +137,15 @@ func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest) (
 			Token:      refreshTokenString,
 			ExpiryTime: refreshTokenExpired,
 		},
+	}
+
+	err = s.createUserClientLogService.Create(userData.ID, clientData.ID)
+
+	if err != nil {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorUnprocessAble,
+			Message: err.Error(),
+		}
 	}
 
 	return &res, nil

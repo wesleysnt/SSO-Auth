@@ -32,7 +32,7 @@ func (h *OAuth2Handler) Register(c *fiber.Ctx) error {
 		return helpers.ResponseApiBadRequest(c, err.Error(), nil)
 	}
 
-	err = h.authService.Register(&data)
+	res, err := h.authService.Register(&data)
 
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)
@@ -41,7 +41,7 @@ func (h *OAuth2Handler) Register(c *fiber.Ctx) error {
 		return helpers.ResponseApiError(c, catchErr.Message, catchErr.StatusCode, nil)
 	}
 
-	return helpers.ResponseApiCreated(c, "User created", nil)
+	return helpers.ResponseApiCreated(c, "Registration success, please check your email to verify account", res)
 }
 
 func (h *OAuth2Handler) Login(c *fiber.Ctx) (err error) {
@@ -66,4 +66,28 @@ func (h *OAuth2Handler) Login(c *fiber.Ctx) (err error) {
 	}
 	c.Request().Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	return helpers.ResponseApiCreated(c, "Login successful", res)
+}
+
+func (h *OAuth2Handler) VerifOtp(c *fiber.Ctx) error {
+	data := requests.VerifOtp{}
+
+	c.BodyParser(&data)
+
+	pkg.NewValidator()
+	err := pkg.Validate(data)
+
+	if err != nil {
+		return helpers.ResponseApiBadRequest(c, err.Error(), nil)
+	}
+
+	res, err := h.authService.VerifOtp(&data)
+
+	if err != nil {
+		respErr := err.(*schemas.ResponseApiError)
+		catchErr := helpers.CatchErrorResponseApi(respErr)
+
+		return helpers.ResponseApiError(c, catchErr.Message, catchErr.StatusCode, nil)
+	}
+
+	return helpers.ResponseApiCreated(c, "Verification success", res)
 }

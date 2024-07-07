@@ -23,8 +23,13 @@ func (r *AuthRepository) CreateUser(data *models.User) error {
 	return res.Error
 }
 
+func (r *AuthRepository) CheckEmailExists(email string, data *models.User) error {
+	res := r.orm.Where("email = ?", email).First(&data)
+	return res.Error
+}
+
 func (r *AuthRepository) GetUser(data *models.User, username string) error {
-	res := r.orm.Where("username = ?", username).First(&data)
+	res := r.orm.Where("email = ?", username).First(&data)
 	return res.Error
 }
 
@@ -47,4 +52,9 @@ func (r *AuthRepository) List(scan *[]models.User, page, limit int, sort string)
 	err := preQuery.Scan(&scan)
 
 	return &pagination, err.Error
+}
+
+func (r *AuthRepository) UpdateWithTx(tx *gorm.DB, data *models.User, id uint) error {
+	res := tx.Model(&models.User{}).Where("id = ?", id).Updates(data)
+	return res.Error
 }
