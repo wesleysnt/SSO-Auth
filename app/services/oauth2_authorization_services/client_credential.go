@@ -25,7 +25,7 @@ func NewClientCredentialService() *ClientCredentialService {
 
 func (s *ClientCredentialService) Token(request *requests.TokenRequest) (*responses.TokenResponse, error) {
 	var clientData models.Client
-	err := s.clientRepository.GetById(&clientData, request.ClientId)
+	err := s.clientRepository.GetByClientId(&clientData, request.ClientId)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -96,6 +96,12 @@ func (s *ClientCredentialService) Token(request *requests.TokenRequest) (*respon
 		}
 	}
 
+	redirectUri := clientData.RedirectUri
+
+	if request.RedirectUri != "" {
+		redirectUri = request.RedirectUri
+	}
+
 	res := responses.TokenResponse{
 		AccessToken: responses.AccessToken{
 			Token:      tokenString,
@@ -105,6 +111,7 @@ func (s *ClientCredentialService) Token(request *requests.TokenRequest) (*respon
 			Token:      refreshTokenString,
 			ExpiryTime: refreshTokenExpired,
 		},
+		RedirectUri: redirectUri,
 	}
 
 	return &res, nil

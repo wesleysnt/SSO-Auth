@@ -1,7 +1,7 @@
 package requests
 
 type ClientRequest struct {
-	ClientId    string `validate:"required" form:"client_id"`
+	Name        string `validate:"required" form:"name"`
 	Secret      string `validate:"required" form:"secret"`
 	RedirectUri string `validate:"required" form:"redirect_uri"`
 }

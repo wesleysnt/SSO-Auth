@@ -28,6 +28,11 @@ func (r *ClientRepository) GetById(data *models.Client, id uint) error {
 	return res.Error
 }
 
+func (r *ClientRepository) GetByClientId(data *models.Client, clientId string) error {
+	res := r.orm.Where("client_id = ?", clientId).First(&data)
+	return res.Error
+}
+
 func (r *ClientRepository) CheckClientId(clientId string) error {
 	var data *models.Client
 	res := r.orm.Where("client_id = ?", clientId).First(&data)

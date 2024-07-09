@@ -1,4 +1,4 @@
-CREATE TABLE code_challanges (
+CREATE TABLE code_challenges (
   id SERIAL PRIMARY KEY NOT NULL,
   code varchar(255) not null,
   method varchar(10) not null,

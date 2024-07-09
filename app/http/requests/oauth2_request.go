@@ -16,9 +16,9 @@ type OAuth2Request struct {
 }
 
 type OAuth2LoginRequest struct {
-	Email       string `validate:"required" form:"email" json:"email"`
-	Password    string `validate:"required" form:"password" json:"password"`
-	ClientId    uint   `validate:"" form:"client_id" json:"client_id"`
-	GrantType   string `validate:"required" form:"grant_type" json:"grant_type"`
-	RedirectUri string `validate:"" form:"redirect_uri" json:"redirect_uri"`
+	Email         string `validate:"required,email" form:"email" json:"email"`
+	Password      string `validate:"required" form:"password" json:"password"`
+	ClientId      string `validate:"required" form:"client_id" json:"client_id"`
+	GrantType     string `validate:"required" form:"grant_type" json:"grant_type"`
+	CodeChallenge string `validate:"required_if=GrantType authorization_code" form:"code_challenge" json:"code_challenge"`
 }

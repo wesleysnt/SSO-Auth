@@ -16,15 +16,13 @@ type LoginResponses struct {
 	Email        string       `json:"email"`
 	AccessToken  AccessToken  `json:"access_token"`
 	RefreshToken RefreshToken `json:"refresh_token"`
-	RedirectUri  string       `json:"redirect_uri"`
 }
 
 type LoginResponsesAuthCode struct {
-	Id          uint     `json:"id"`
-	Name        string   `json:"name"`
-	Email       string   `json:"email"`
-	AuthCode    AuthCode `json:"auth_code"`
-	RedirectUri string   `json:"redirect_uri"`
+	Id       uint     `json:"id"`
+	Name     string   `json:"name"`
+	Email    string   `json:"email"`
+	AuthCode AuthCode `json:"auth_code"`
 }
 
 type AuthCode struct {
