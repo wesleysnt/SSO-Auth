@@ -56,7 +56,6 @@ func (h *OAuth2Handler) Login(c *fiber.Ctx) (err error) {
 		return helpers.ResponseApiBadRequest(c, err.Error(), nil)
 
 	}
-
 	res, err := h.authService.Login(&data)
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)
@@ -64,7 +63,6 @@ func (h *OAuth2Handler) Login(c *fiber.Ctx) (err error) {
 
 		return helpers.ResponseApiError(c, catchErr.Message, catchErr.StatusCode, nil)
 	}
-	c.Request().Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	return helpers.ResponseApiCreated(c, "Login successful", res)
 }
 

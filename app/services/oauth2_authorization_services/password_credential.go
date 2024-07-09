@@ -30,7 +30,7 @@ func NewPasswordCredentialService() *PasswordCredetialService {
 
 func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest) (any, error) {
 	var clientData models.Client
-	err := s.clientRepository.GetById(&clientData, request.ClientId)
+	err := s.clientRepository.GetByClientId(&clientData, request.ClientId)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -120,15 +120,10 @@ func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest) (
 		}
 	}
 
-	redirectUri := clientData.RedirectUri
-	if request.RedirectUri != "" {
-		redirectUri = request.RedirectUri
-	}
 	res := responses.LoginResponses{
-		Id:          userData.ID,
-		Name:        userData.Name,
-		Email:       userData.Email,
-		RedirectUri: redirectUri,
+		Id:    userData.ID,
+		Name:  userData.Name,
+		Email: userData.Email,
 		AccessToken: responses.AccessToken{
 			Token:      tokenString,
 			ExpiryTime: tokenExpired,

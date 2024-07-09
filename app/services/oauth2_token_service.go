@@ -13,6 +13,8 @@ import (
 )
 
 type Oauth2TokenService struct {
+	clientRepository       *repositories.ClientRepository
+	authRepository         *repositories.AuthRepository
 	authCodeService        *oauth2authorizationservices.AuthCodeService
 	clientCredential       *oauth2authorizationservices.ClientCredentialService
 	refreshTokenRepository *repositories.RefreshTokenRepository
@@ -21,6 +23,8 @@ type Oauth2TokenService struct {
 
 func NewOauth2TokenService() *Oauth2TokenService {
 	return &Oauth2TokenService{
+		clientRepository:       repositories.NewClientRepository(),
+		authRepository:         repositories.NewAuthRepository(),
 		authCodeService:        oauth2authorizationservices.NewAuthCodeService(),
 		clientCredential:       oauth2authorizationservices.NewClientCredentialService(),
 		refreshTokenRepository: repositories.NewRefreshTokenRepository(),
@@ -66,7 +70,26 @@ func (s *Oauth2TokenService) ValidateToken(request *requests.ValidateTokenReques
 }
 
 func (s *Oauth2TokenService) RefreshToken(request *requests.RefreshTokenRequest) (*responses.TokenResponse, error) {
-	err := s.refreshTokenRepository.Check(request.RefreshToken, request.ClientId, request.UserId)
+	var clientData models.Client
+	err := s.clientRepository.GetByClientId(&clientData, request.ClientId)
+
+	if err != nil {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorNotFound,
+			Message: "Client not found!",
+		}
+	}
+
+	var userData models.User
+
+	err = s.authRepository.GetById(&userData, request.UserId)
+	if err != nil {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorNotFound,
+			Message: "User not found!",
+		}
+	}
+	err = s.refreshTokenRepository.Check(request.RefreshToken, clientData.ID, request.UserId)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{

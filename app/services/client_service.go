@@ -21,20 +21,10 @@ func NewClientService() *ClientService {
 }
 
 func (s *ClientService) Create(request *requests.ClientRequest) error {
-	err := s.clientRepository.CheckClientId(request.ClientId)
-
-	if err == nil {
-		return &schemas.ResponseApiError{
-			Status:  schemas.ApiErrorNotFound,
-			Message: "This client id is already taken",
-		}
-	}
-
-	secret := facades.RandomString(32)
 
 	data := models.Client{
-		ClientId:    request.ClientId,
-		Secret:      secret,
+		Name:        request.Name,
+		Secret:      request.Secret,
 		RedirectUri: request.RedirectUri,
 	}
 
@@ -72,7 +62,7 @@ func (s *ClientService) List(page, limit, sort string) (*utils.Pagination, error
 	for _, v := range scan {
 		resp = append(resp, responses.ClientDetail{
 			Id:          v.ID,
-			ClientId:    v.ClientId,
+			ClientId:    *v.ClientId,
 			Secret:      v.Secret,
 			RedirectUri: v.RedirectUri,
 		})
@@ -109,7 +99,7 @@ func (s *ClientService) Update(clientId uint, request *requests.ClientRequest) e
 	}
 
 	data := &models.Client{
-		ClientId:    request.ClientId,
+		Name:        request.Name,
 		Secret:      request.Secret,
 		RedirectUri: request.RedirectUri,
 	}

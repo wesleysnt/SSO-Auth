@@ -33,7 +33,7 @@ func NewAuthCodeService() *AuthCodeService {
 
 func (s *AuthCodeService) Login(request *requests.OAuth2LoginRequest) (any, error) {
 	var clientData models.Client
-	err := s.clientRepository.GetById(&clientData, request.ClientId)
+	err := s.clientRepository.GetByClientId(&clientData, request.ClientId)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -94,7 +94,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.Toke
 	var authCode models.AuthCode
 
 	var clientData models.Client
-	err := s.clientRepository.GetById(&clientData, request.ClientId)
+	err := s.clientRepository.GetByClientId(&clientData, request.ClientId)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -113,7 +113,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.Toke
 		}
 	}
 
-	err = s.authCodeRepository.GetCode(request.AuthCode, request.UserId, request.ClientId, &authCode)
+	err = s.authCodeRepository.GetCode(request.AuthCode, request.UserId, clientData.ID, &authCode)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -199,6 +199,12 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.Toke
 		}
 	}
 
+	redirectUri := clientData.RedirectUri
+
+	if request.RedirectUri != "" {
+		redirectUri = request.RedirectUri
+	}
+
 	res := responses.TokenResponse{
 
 		AccessToken: responses.AccessToken{
@@ -209,7 +215,8 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.Toke
 			Token:      refreshTokenString,
 			ExpiryTime: refreshTokenExpired,
 		},
-		Scope: request.AuthCode,
+		Scope:       request.AuthCode,
+		RedirectUri: redirectUri,
 	}
 
 	return &res, nil
