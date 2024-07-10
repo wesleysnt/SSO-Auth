@@ -12,6 +12,6 @@ type TokenResponse struct {
 type ValidateTokenResponse struct {
 	Active   bool            `json:"active"`
 	Exp      jwt.NumericDate `json:"exp"`
-	ClientId uint            `json:"client_id"`
+	ClientId string          `json:"client_id"`
 	UserId   uint            `json:"user_id"`
 }

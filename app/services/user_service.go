@@ -36,10 +36,11 @@ func (s *UserService) List(page, limit, sort string) (*utils.Pagination, error) 
 
 	for _, v := range scan {
 		resp = append(resp, responses.UserResponses{
-			Id:    v.ID,
-			Name:  v.Name,
-			Email: v.Email,
-			Phone: v.Phone,
+			Id:       v.ID,
+			Name:     v.Name,
+			Email:    v.Email,
+			Phone:    v.Phone,
+			IsActive: v.IsActive,
 		})
 	}
 
@@ -62,10 +63,11 @@ func (s *UserService) GetById(id uint) (*responses.UserResponses, error) {
 	}
 
 	resp = responses.UserResponses{
-		Id:    scan.ID,
-		Name:  scan.Name,
-		Email: scan.Email,
-		Phone: scan.Phone,
+		Id:       scan.ID,
+		Name:     scan.Name,
+		Email:    scan.Email,
+		Phone:    scan.Phone,
+		IsActive: scan.IsActive,
 	}
 
 	return &resp, nil

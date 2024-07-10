@@ -41,7 +41,7 @@ func (s *AuthService) Login(request *requests.LoginRequest) (*responses.AdminLog
 	}
 
 	// Generate access token
-	tokenString, err := facades.GenerateToken("", adminData.ID, 0, 2)
+	tokenString, err := facades.GenerateToken("", "", adminData.ID, 2)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{

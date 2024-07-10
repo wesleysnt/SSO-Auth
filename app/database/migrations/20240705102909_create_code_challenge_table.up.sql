@@ -1,5 +1,6 @@
 CREATE TABLE code_challenges (
   id SERIAL PRIMARY KEY NOT NULL,
+  unique_code uuid null default uuid_generate_v4(),
   code varchar(255) not null,
   method varchar(10) not null,
   client_id bigint not null,

@@ -8,8 +8,6 @@ import (
 	"sso-auth/app/responses"
 	"sso-auth/app/schemas"
 	oauth2authorizationservices "sso-auth/app/services/oauth2_authorization_services"
-
-	"github.com/gookit/goutil/dump"
 )
 
 type Oauth2TokenService struct {
@@ -19,6 +17,7 @@ type Oauth2TokenService struct {
 	clientCredential       *oauth2authorizationservices.ClientCredentialService
 	refreshTokenRepository *repositories.RefreshTokenRepository
 	accessTokenRepository  *repositories.AccessTokenRepository
+	passwordCredential     *oauth2authorizationservices.PasswordCredetialService
 }
 
 func NewOauth2TokenService() *Oauth2TokenService {
@@ -29,14 +28,15 @@ func NewOauth2TokenService() *Oauth2TokenService {
 		clientCredential:       oauth2authorizationservices.NewClientCredentialService(),
 		refreshTokenRepository: repositories.NewRefreshTokenRepository(),
 		accessTokenRepository:  repositories.NewAccessTokenRepository(),
+		passwordCredential:     oauth2authorizationservices.NewPasswordCredentialService(),
 	}
 }
 
 func (s *Oauth2TokenService) Token(request *requests.TokenRequest) (res *responses.TokenResponse, err error) {
 	switch request.GrantType {
-	case string(requests.GrantTypeAuthCode):
+	case requests.GrantTypeAuthCode:
 		res, err = s.authCodeService.Token(request)
-	case string(requests.GrantTypeClientCredential):
+	case requests.GrantTypeClientCredential:
 		res, err = s.clientCredential.Token(request)
 	}
 
@@ -44,26 +44,15 @@ func (s *Oauth2TokenService) Token(request *requests.TokenRequest) (res *respons
 
 }
 
-func (s *Oauth2TokenService) ValidateToken(request *requests.ValidateTokenRequest) (res responses.ValidateTokenResponse, err error) {
-	token, err := facades.ParseToken(request.Token, request.Secret)
+func (s *Oauth2TokenService) ValidateToken(request *requests.ValidateTokenRequest) (res *responses.ValidateTokenResponse, err error) {
 
-	if err != nil {
-		dump.P(err)
-		err = &schemas.ResponseApiError{
-			Status:  schemas.ApiErrorBadRequest,
-			Message: err.Error(),
-		}
-		return
-	}
-
-	tokenExp, _ := token.Claims.GetExpirationTime()
-	clientId, _ := facades.GetClientIdFromToken(request.Token, request.Secret)
-	userId, _ := facades.GetUserIdFromToken(request.Token, request.Secret)
-	res = responses.ValidateTokenResponse{
-		Active:   true,
-		Exp:      *tokenExp,
-		ClientId: clientId,
-		UserId:   userId,
+	switch request.GrantType {
+	case requests.GrantTypeAuthCode:
+		res, err = s.authCodeService.ValidateToken(request)
+	case requests.GrantTypeClientCredential:
+		res, err = s.clientCredential.ValidateToken(request)
+	case requests.GrantTypePasswordCredential:
+		res, err = s.passwordCredential.ValidateToken(request)
 	}
 
 	return
@@ -111,7 +100,7 @@ func (s *Oauth2TokenService) RefreshToken(request *requests.RefreshTokenRequest)
 	userId, _ := facades.GetUserIdFromToken(request.RefreshToken, request.Secret)
 
 	// Generate access token
-	tokenString, err := facades.GenerateToken(request.Secret, userId, clientId, 2)
+	tokenString, err := facades.GenerateToken(request.Secret, clientId, userId, 2)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -134,7 +123,7 @@ func (s *Oauth2TokenService) RefreshToken(request *requests.RefreshTokenRequest)
 	errSaveToken := s.accessTokenRepository.Create(&models.AccessToken{
 		Token:      tokenString,
 		UserId:     userId,
-		ClientId:   clientId,
+		ClientId:   clientData.ID,
 		ExpiryTime: tokenExpired.Time,
 	})
 
@@ -147,7 +136,7 @@ func (s *Oauth2TokenService) RefreshToken(request *requests.RefreshTokenRequest)
 
 	// Generate Refresh Token
 
-	refreshTokenString, err := facades.GenerateToken(request.Secret, userId, clientId, 4)
+	refreshTokenString, err := facades.GenerateToken(request.Secret, clientId, userId, 4)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -161,7 +150,7 @@ func (s *Oauth2TokenService) RefreshToken(request *requests.RefreshTokenRequest)
 	errSaveRefreshToken := s.refreshTokenRepository.Create(&models.RefreshToken{
 		Token:      refreshTokenString,
 		UserId:     userId,
-		ClientId:   clientId,
+		ClientId:   clientData.ID,
 		ExpiryTime: refreshTokenExpired.Time,
 	})
 

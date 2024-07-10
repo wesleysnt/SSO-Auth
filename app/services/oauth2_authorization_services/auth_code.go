@@ -18,6 +18,7 @@ type AuthCodeService struct {
 	accessTokenRepository      *repositories.AccessTokenRepository
 	refreshTokenRepository     *repositories.RefreshTokenRepository
 	createUserClientLogService *CreateUserClientLogService
+	codeChallengeRepository    *repositories.CodeChallengeRepository
 }
 
 func NewAuthCodeService() *AuthCodeService {
@@ -28,6 +29,7 @@ func NewAuthCodeService() *AuthCodeService {
 		accessTokenRepository:      repositories.NewAccessTokenRepository(),
 		refreshTokenRepository:     repositories.NewRefreshTokenRepository(),
 		createUserClientLogService: NewCreateUserClientLogService(),
+		codeChallengeRepository:    repositories.NewCodeChallengeRepository(),
 	}
 }
 
@@ -70,6 +72,28 @@ func (s *AuthCodeService) Login(request *requests.OAuth2LoginRequest) (any, erro
 	}
 	err = s.authCodeRepository.Create(&authCodeData)
 
+	if err != nil {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorUnprocessAble,
+			Message: err.Error(),
+		}
+	}
+
+	codeChallengeData := models.CodeChallenge{
+		Code:     request.CodeChallenge,
+		ClientId: clientData.ID,
+		Method:   "s256",
+	}
+
+	err = s.codeChallengeRepository.Create(&codeChallengeData)
+
+	if err != nil {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorUnprocessAble,
+			Message: err.Error(),
+		}
+	}
+
 	res := responses.LoginResponsesAuthCode{
 		Id:    authCodeData.UserId,
 		Name:  userData.Name,
@@ -78,13 +102,7 @@ func (s *AuthCodeService) Login(request *requests.OAuth2LoginRequest) (any, erro
 			Code:       *authCodeData.Code,
 			ExpiryTime: authCodeData.ExpiryTime.Unix(),
 		},
-	}
-
-	if err != nil {
-		return nil, &schemas.ResponseApiError{
-			Status:  schemas.ApiErrorForbidden,
-			Message: err.Error(),
-		}
+		CodeChallengeUniqueCode: *codeChallengeData.UniqueCode,
 	}
 
 	return &res, nil
@@ -100,6 +118,16 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.Toke
 		return nil, &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorNotFound,
 			Message: "Client not found!",
+		}
+	}
+
+	var codeChallengeData models.CodeChallenge
+	err = s.codeChallengeRepository.GetChallenge(request.CodeChallengeUniqueCode, &codeChallengeData)
+
+	if err != nil || !utils.VerifyCode(request.CodeVerifier, codeChallengeData.Code) || codeChallengeData.ClientId != clientData.ID {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorBadRequest,
+			Message: "Invalid code verifier",
 		}
 	}
 
@@ -129,7 +157,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.Toke
 	}
 
 	// Generate access token
-	tokenString, err := facades.GenerateToken(clientData.Secret, userData.ID, clientData.ID, 2)
+	tokenString, err := facades.GenerateToken(clientData.Secret, *clientData.ClientId, userData.ID, 2)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -165,7 +193,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.Toke
 
 	// Generate Refresh Token
 
-	refreshTokenString, err := facades.GenerateToken(clientData.Secret, userData.ID, clientData.ID, 4)
+	refreshTokenString, err := facades.GenerateToken(clientData.Secret, *clientData.ClientId, userData.ID, 4)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -215,9 +243,47 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.Toke
 			Token:      refreshTokenString,
 			ExpiryTime: refreshTokenExpired,
 		},
-		Scope:       request.AuthCode,
+		Scope:       request.Scope,
 		RedirectUri: redirectUri,
 	}
 
 	return &res, nil
+}
+
+func (s *AuthCodeService) ValidateToken(request *requests.ValidateTokenRequest) (*responses.ValidateTokenResponse, error) {
+	var codeChallengeData models.CodeChallenge
+	s.codeChallengeRepository.GetChallenge(request.CodeChallengeUniqueCode, &codeChallengeData)
+	if !utils.VerifyCode(request.CodeVerifier, codeChallengeData.Code) {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorBadRequest,
+			Message: "Invalid code verifier",
+		}
+	}
+
+	tokenData, err := s.accessTokenRepository.GetByToken(request.Token)
+	if err != nil {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorUnauthorized,
+			Message: "Invalid token",
+		}
+	}
+	var clientData models.Client
+	s.clientRepository.GetById(&clientData, tokenData.ClientId)
+	// Verify secret
+	token, err := facades.ParseToken(request.Token, clientData.Secret)
+
+	if err != nil {
+		return nil, err
+	}
+
+	tokenExp, _ := token.Claims.GetExpirationTime()
+	clientId, _ := facades.GetClientIdFromToken(request.Token, clientData.Secret)
+	userId, _ := facades.GetUserIdFromToken(request.Token, clientData.Secret)
+	res := &responses.ValidateTokenResponse{
+		Active:   true,
+		Exp:      *tokenExp,
+		ClientId: clientId,
+		UserId:   userId,
+	}
+	return res, nil
 }

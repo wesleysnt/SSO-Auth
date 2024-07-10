@@ -3,6 +3,7 @@ package routes
 import (
 	authhandler "sso-auth/app/http/handlers/auth_handler"
 	clienthandler "sso-auth/app/http/handlers/client_handler"
+	dashboardhandler "sso-auth/app/http/handlers/dashboard_handler"
 	historyhandler "sso-auth/app/http/handlers/history_handler"
 	oauth2handler "sso-auth/app/http/handlers/oauth2_handler"
 	tokenhandler "sso-auth/app/http/handlers/token_handler"
@@ -29,6 +30,8 @@ func RegisterRoutes(app *fiber.App) {
 	userhandler.UserRoute(api)
 
 	userclientloghandler.UserClientLogRoute(api)
+
+	dashboardhandler.DashboardRoute(api)
 
 	pkg.ListRouters(app)
 

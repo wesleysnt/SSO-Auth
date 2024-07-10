@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"sso-auth/app/facades"
 	"sso-auth/app/helpers"
 	"sso-auth/app/http/requests"
 	"sso-auth/app/models"
@@ -11,6 +12,7 @@ import (
 	oauth2authorizeservices "sso-auth/app/services/oauth2_authorization_services"
 	"sso-auth/app/utils"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -20,6 +22,9 @@ type OAuth2Service struct {
 	passwordCredentialService *oauth2authorizeservices.PasswordCredetialService
 	authCodeService           *oauth2authorizeservices.AuthCodeService
 	txRepo                    *repositories.TxRepository
+	accessTokenRepository     *repositories.AccessTokenRepository
+	clientRepository          *repositories.ClientRepository
+	authCodeRepository        *repositories.AuthCodeRepository
 }
 
 func NewOAuth2Service() *OAuth2Service {
@@ -28,16 +33,19 @@ func NewOAuth2Service() *OAuth2Service {
 		passwordCredentialService: oauth2authorizeservices.NewPasswordCredentialService(),
 		authCodeService:           oauth2authorizeservices.NewAuthCodeService(),
 		txRepo:                    repositories.NewTxRepository(),
+		accessTokenRepository:     repositories.NewAccessTokenRepository(),
+		clientRepository:          repositories.NewClientRepository(),
+		authCodeRepository:        repositories.NewAuthCodeRepository(),
 	}
 }
 
 func (s *OAuth2Service) Login(request *requests.OAuth2LoginRequest) (res any, err error) {
 
 	switch request.GrantType {
-	case string(requests.GrantTypePasswordCredential):
+	case requests.GrantTypePasswordCredential:
 		res, err = s.passwordCredentialService.Login(request)
 
-	case string(requests.GrantTypeAuthCode):
+	case requests.GrantTypeAuthCode:
 		res, err = s.authCodeService.Login(request)
 	}
 	return
@@ -51,6 +59,15 @@ func (s *OAuth2Service) Register(data *requests.OAuth2Request) (*responses.OtpRe
 		return nil, &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorBadRequest,
 			Message: "Email already taken",
+		}
+	}
+
+	isPhoneValid := utils.IsPhoneNumber(data.Phone)
+
+	if !isPhoneValid {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorBadRequest,
+			Message: "Phone number is invalid",
 		}
 	}
 
@@ -141,4 +158,59 @@ func (s *OAuth2Service) VerifOtp(request *requests.VerifOtp) (*responses.VerifOt
 		Email: user.Email,
 		Phone: user.Phone,
 	}, nil
+}
+
+func (s *OAuth2Service) IsLoggedIn(request *requests.IsLoggedInRequest) (*responses.IsLoggedInResponse, error) {
+	var clientData models.Client
+
+	err := s.clientRepository.GetByClientId(&clientData, request.ClientId)
+
+	if err != nil {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorBadRequest,
+			Message: "Client not found!",
+		}
+	}
+
+	accessToken, err := s.accessTokenRepository.GetByTokenAndClient(request.Token, clientData.ID)
+
+	if err != nil {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorBadRequest,
+			Message: "Token not found!",
+		}
+	}
+
+	_, err = facades.ParseToken(accessToken.Token, clientData.Secret)
+	if err != nil {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorBadRequest,
+			Message: err.Error(),
+		}
+	}
+
+	userId, _ := facades.GetUserIdFromToken(accessToken.Token, clientData.Secret)
+
+	authCode := facades.RandomString(64)
+
+	authCodeData := models.AuthCode{
+		Code:       &authCode,
+		ExpiryTime: time.Now().Add(time.Minute * 10),
+		ClientId:   clientData.ID,
+		UserId:     userId,
+	}
+	err = s.authCodeRepository.Create(&authCodeData)
+
+	if err != nil {
+		return nil, &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorUnprocessAble,
+			Message: err.Error(),
+		}
+	}
+
+	return &responses.IsLoggedInResponse{
+		IsLoggedIn: true,
+		AuthCode:   authCode,
+	}, nil
+
 }
