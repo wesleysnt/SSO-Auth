@@ -35,7 +35,7 @@ func (s *ClientCredentialService) Token(request *requests.TokenRequest) (*respon
 	}
 
 	// Generate access token
-	tokenString, err := facades.GenerateToken(clientData.Secret, 0, clientData.ID, 2)
+	tokenString, err := facades.GenerateToken(clientData.Secret, *clientData.ClientId, 0, 2)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -71,7 +71,7 @@ func (s *ClientCredentialService) Token(request *requests.TokenRequest) (*respon
 
 	// Generate Refresh Token
 
-	refreshTokenString, err := facades.GenerateToken(clientData.Secret, 0, clientData.ID, 4)
+	refreshTokenString, err := facades.GenerateToken(clientData.Secret, *clientData.ClientId, 0, 4)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -115,4 +115,23 @@ func (s *ClientCredentialService) Token(request *requests.TokenRequest) (*respon
 	}
 
 	return &res, nil
+}
+
+func (s *ClientCredentialService) ValidateToken(request *requests.ValidateTokenRequest) (*responses.ValidateTokenResponse, error) {
+	token, err := facades.ParseToken(request.Token, request.Secret)
+
+	if err != nil {
+		return nil, err
+	}
+
+	tokenExp, _ := token.Claims.GetExpirationTime()
+	clientId, _ := facades.GetClientIdFromToken(request.Token, request.Secret)
+	userId, _ := facades.GetUserIdFromToken(request.Token, request.Secret)
+	res := &responses.ValidateTokenResponse{
+		Active:   true,
+		Exp:      *tokenExp,
+		ClientId: clientId,
+		UserId:   userId,
+	}
+	return res, nil
 }

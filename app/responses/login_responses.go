@@ -19,10 +19,16 @@ type LoginResponses struct {
 }
 
 type LoginResponsesAuthCode struct {
-	Id       uint     `json:"id"`
-	Name     string   `json:"name"`
-	Email    string   `json:"email"`
-	AuthCode AuthCode `json:"auth_code"`
+	Id                      uint     `json:"id"`
+	Name                    string   `json:"name"`
+	Email                   string   `json:"email"`
+	AuthCode                AuthCode `json:"auth_code"`
+	CodeChallengeUniqueCode string   `json:"code_challenge_unique_code"`
+}
+
+type IsLoggedInResponse struct {
+	IsLoggedIn bool   `json:"is_logged_in"`
+	AuthCode   string `json:"auth_code"`
 }
 
 type AuthCode struct {

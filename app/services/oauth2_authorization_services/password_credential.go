@@ -59,7 +59,7 @@ func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest) (
 	}
 
 	// Generate access token
-	tokenString, err := facades.GenerateToken(clientData.Secret, userData.ID, clientData.ID, 2)
+	tokenString, err := facades.GenerateToken(clientData.Secret, *clientData.ClientId, userData.ID, 2)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -95,7 +95,7 @@ func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest) (
 
 	// Generate Refresh Token
 
-	refreshTokenString, err := facades.GenerateToken(clientData.Secret, userData.ID, clientData.ID, 4)
+	refreshTokenString, err := facades.GenerateToken(clientData.Secret, *clientData.ClientId, userData.ID, 4)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -144,4 +144,23 @@ func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest) (
 	}
 
 	return &res, nil
+}
+
+func (s *PasswordCredetialService) ValidateToken(request *requests.ValidateTokenRequest) (*responses.ValidateTokenResponse, error) {
+	token, err := facades.ParseToken(request.Token, request.Secret)
+
+	if err != nil {
+		return nil, err
+	}
+
+	tokenExp, _ := token.Claims.GetExpirationTime()
+	clientId, _ := facades.GetClientIdFromToken(request.Token, request.Secret)
+	userId, _ := facades.GetUserIdFromToken(request.Token, request.Secret)
+	res := &responses.ValidateTokenResponse{
+		Active:   true,
+		Exp:      *tokenExp,
+		ClientId: clientId,
+		UserId:   userId,
+	}
+	return res, nil
 }

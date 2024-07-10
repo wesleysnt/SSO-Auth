@@ -23,6 +23,18 @@ func (r *AccessTokenRepository) Create(data *models.AccessToken) error {
 	return res.Error
 }
 
+func (r *AccessTokenRepository) GetByToken(token string) (*models.AccessToken, error) {
+	data := models.AccessToken{}
+	res := r.orm.Where("token = ?", token).First(&data)
+	return &data, res.Error
+}
+
+func (r *AccessTokenRepository) GetByTokenAndClient(token string, clientId uint) (*models.AccessToken, error) {
+	data := models.AccessToken{}
+	res := r.orm.Where("token = ?", token).Where("client_id = ?", clientId).First(&data)
+	return &data, res.Error
+}
+
 func (r *AccessTokenRepository) GetHistory(scan any, page, limit int, sort string) (*utils.Pagination, error) {
 	var pagination utils.Pagination
 
@@ -32,7 +44,7 @@ func (r *AccessTokenRepository) GetHistory(scan any, page, limit int, sort strin
 
 	paginate = pagination.SetLimit(limit).SetPage(page).SetSort(sort).Pagination(q)
 
-	res := facades.Orm().Scopes(paginate).Model(&models.AccessToken{}).Joins("left join users on users.id = access_tokens.user_id").Joins("left join clients on clients.id = access_tokens.client_id").Select("access_tokens.id as id", "access_tokens.created_at as date", "clients.client_id as client", "users.username as user").Scan(scan)
+	res := facades.Orm().Scopes(paginate).Model(&models.AccessToken{}).Joins("left join users on users.id = access_tokens.user_id").Joins("left join clients on clients.id = access_tokens.client_id").Select("access_tokens.id as id", "access_tokens.created_at as date", "clients.name as client", "users.name as user").Scan(scan)
 
 	return &pagination, res.Error
 }

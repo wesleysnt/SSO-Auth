@@ -39,7 +39,7 @@ func (r *UserClientLogRepository) List(scan *[]responses.UserClientLogResponse, 
 	preQuery := facades.Orm().Scopes(paginate).Model(&models.UserClientLog{}).
 		Joins("INNER JOIN users on user_client_logs.user_id = users.id").
 		Joins("INNER JOIN clients on user_client_logs.client_id = clients.id").
-		Select("user_client_logs.*", "users.name as user", "clients.client_id as client")
+		Select("user_client_logs.*", "users.name as user", "clients.name as client").Order("user_client_logs.created_at desc")
 
 	err := preQuery.Scan(&scan)
 

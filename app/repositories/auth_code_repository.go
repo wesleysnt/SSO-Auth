@@ -37,7 +37,7 @@ func (r *AuthCodeRepository) GetHistory(scan any, page, limit int, sort string) 
 
 	paginate = pagination.SetLimit(limit).SetPage(page).SetSort(sort).Pagination(q)
 
-	res := facades.Orm().Scopes(paginate).Model(&models.AuthCode{}).Joins("left join users on users.id = auth_codes.user_id").Joins("left join clients on clients.id = auth_codes.client_id").Select("auth_codes.id as id", "auth_codes.created_at as date", "clients.client_id as client", "users.username as user").Scan(scan)
+	res := facades.Orm().Scopes(paginate).Model(&models.AuthCode{}).Joins("left join users on users.id = auth_codes.user_id").Joins("left join clients on clients.id = auth_codes.client_id").Select("auth_codes.id as id", "auth_codes.created_at as date", "clients.name as client", "users.name as user").Scan(scan)
 
 	return &pagination, res.Error
 }

@@ -14,3 +14,7 @@ func GenerateCodeChallange(verifier string) (challenge string) {
 	challenge = strings.Replace(challenge, "=", "", -1)
 	return
 }
+
+func VerifyCode(verifier, challenge string) bool {
+	return GenerateCodeChallange(verifier) == challenge
+}

@@ -15,8 +15,8 @@ import (
 var HmacSecret []byte
 
 type CustomClaim struct {
-	UserId   uint `json:"user_id"`
-	ClientId uint `json:"client_id"`
+	UserId   uint   `json:"user_id"`
+	ClientId string `json:"client_id"`
 	jwt.RegisteredClaims
 }
 
@@ -25,7 +25,7 @@ func ValidMAC(key []byte) {
 	HmacSecret = mac.Sum(nil)
 }
 
-func GenerateToken(secret string, userId, clientId, expiredDuration uint) (string, error) {
+func GenerateToken(secret, clientId string, userId, expiredDuration uint) (string, error) {
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
 
@@ -96,10 +96,10 @@ func GetUserIdFromToken(tokenString, secret string) (uint, error) {
 	return claims.UserId, nil
 }
 
-func GetClientIdFromToken(tokenString, secret string) (uint, error) {
+func GetClientIdFromToken(tokenString, secret string) (string, error) {
 	token, err := ParseToken(tokenString, secret)
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 
 	claims := token.Claims.(*CustomClaim)

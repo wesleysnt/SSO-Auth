@@ -89,3 +89,27 @@ func (h *OAuth2Handler) VerifOtp(c *fiber.Ctx) error {
 
 	return helpers.ResponseApiCreated(c, "Verification success", res)
 }
+
+func (h *OAuth2Handler) IsLoggedIn(c *fiber.Ctx) error {
+	data := requests.IsLoggedInRequest{}
+
+	c.BodyParser(&data)
+
+	pkg.NewValidator()
+	err := pkg.Validate(data)
+
+	if err != nil {
+		return helpers.ResponseApiBadRequest(c, err.Error(), nil)
+	}
+
+	res, err := h.authService.IsLoggedIn(&data)
+
+	if err != nil {
+		respErr := err.(*schemas.ResponseApiError)
+		catchErr := helpers.CatchErrorResponseApi(respErr)
+
+		return helpers.ResponseApiError(c, catchErr.Message, catchErr.StatusCode, nil)
+	}
+
+	return helpers.ResponseApiCreated(c, "User had logged in!", res)
+}
