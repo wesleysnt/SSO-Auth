@@ -58,3 +58,8 @@ func (r *AuthRepository) UpdateWithTx(tx *gorm.DB, data *models.User, id uint) e
 	res := tx.Model(&models.User{}).Where("id = ?", id).Updates(data)
 	return res.Error
 }
+
+func (r *AuthRepository) UpdatePassword(userId uint, password string) error {
+	res := r.orm.Where("id = ?", userId).Updates(&models.User{Password: password})
+	return res.Error
+}
