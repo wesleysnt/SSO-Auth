@@ -25,6 +25,7 @@ type OAuth2Service struct {
 	accessTokenRepository     *repositories.AccessTokenRepository
 	clientRepository          *repositories.ClientRepository
 	authCodeRepository        *repositories.AuthCodeRepository
+	forgotPasswordToken       *repositories.ForgotPasswordTokenRepository
 }
 
 func NewOAuth2Service() *OAuth2Service {
@@ -36,6 +37,7 @@ func NewOAuth2Service() *OAuth2Service {
 		accessTokenRepository:     repositories.NewAccessTokenRepository(),
 		clientRepository:          repositories.NewClientRepository(),
 		authCodeRepository:        repositories.NewAuthCodeRepository(),
+		forgotPasswordToken:       repositories.NewForgotPasswordTokenRepository(),
 	}
 }
 
@@ -98,7 +100,7 @@ func (s *OAuth2Service) Register(data *requests.OAuth2Request) (*responses.OtpRe
 		defer wg.Done()
 		errMail := utils.NewEmailBuilder().To([]string{data.Email}).Content(utils.MailContent{
 			Subject: "SSO Auth Email Verification",
-			Html:    otpCode,
+			Html:    fmt.Sprintf("Use this otp code to verify your email \n OTP: %v", otpCode),
 		}).Send()
 
 		if errMail != nil {
@@ -212,5 +214,86 @@ func (s *OAuth2Service) IsLoggedIn(request *requests.IsLoggedInRequest) (*respon
 		IsLoggedIn: true,
 		AuthCode:   authCode,
 	}, nil
+}
 
+func (s *OAuth2Service) RequestForgotPassword(request *requests.RequestForgotPasswordRequest) error {
+	var userData models.User
+	err := s.authRepository.CheckEmailExists(request.Email, &userData)
+
+	if err != nil {
+		return &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorBadRequest,
+			Message: "User not found!",
+		}
+	}
+
+	token := uuid.NewString()
+
+	err = s.forgotPasswordToken.Create(&models.ForgotPasswordToken{
+		UserId:     userData.ID,
+		Token:      token,
+		ExpiryTime: time.Now().Add(time.Minute * 10),
+	})
+
+	if err != nil {
+		return &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorBadRequest,
+			Message: err.Error(),
+		}
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+		errMail := utils.NewEmailBuilder().To([]string{request.Email}).Content(utils.MailContent{
+			Subject: "SSO Auth Email Verification",
+			Html:    fmt.Sprintf("Open the link below to reset your password. \n Link/%v", token),
+		}).Send()
+
+		if errMail != nil {
+			fmt.Println("[FAILED][SEND][OTP][EMAIL] %v \n", errMail)
+		}
+	}()
+
+	wg.Wait()
+	return nil
+}
+
+func (s *OAuth2Service) ResetPassword(request *requests.ResetPasswordRequest) error {
+	var forgotPasswordToken models.ForgotPasswordToken
+	err := s.forgotPasswordToken.FindByToken(request.Token, &forgotPasswordToken)
+
+	if err != nil {
+		return &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorBadRequest,
+			Message: "Token not found!",
+		}
+	}
+
+	if forgotPasswordToken.ExpiryTime.Before(time.Now()) {
+		return &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorBadRequest,
+			Message: "Token expired!",
+		}
+	}
+
+	err = s.authRepository.UpdatePassword(forgotPasswordToken.UserId, request.Password)
+
+	if err != nil {
+		return &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorBadRequest,
+			Message: err.Error(),
+		}
+	}
+
+	err = s.forgotPasswordToken.UpdateIsUsed(forgotPasswordToken.Token)
+	if err != nil {
+		return &schemas.ResponseApiError{
+			Status:  schemas.ApiErrorBadRequest,
+			Message: err.Error(),
+		}
+	}
+	return nil
 }

@@ -113,3 +113,55 @@ func (h *OAuth2Handler) IsLoggedIn(c *fiber.Ctx) error {
 
 	return helpers.ResponseApiCreated(c, "User had logged in!", res)
 }
+
+func (h *OAuth2Handler) RequestForgotPassword(c *fiber.Ctx) error {
+	data := requests.RequestForgotPasswordRequest{}
+
+	c.BodyParser(&data)
+
+	pkg.NewValidator()
+	err := pkg.Validate(data)
+
+	if err != nil {
+		return helpers.ResponseApiBadRequest(c, err.Error(), nil)
+	}
+
+	err = h.authService.RequestForgotPassword(&data)
+
+	if err != nil {
+		respErr := err.(*schemas.ResponseApiError)
+		catchErr := helpers.CatchErrorResponseApi(respErr)
+
+		return helpers.ResponseApiError(c, catchErr.Message, catchErr.StatusCode, nil)
+	}
+
+	return helpers.ResponseApiCreated(c, "Please check your email to reset your password", nil)
+}
+
+func (h *OAuth2Handler) ResetPassword(c *fiber.Ctx) error {
+	data := requests.ResetPasswordRequest{}
+
+	c.BodyParser(&data)
+
+	pkg.NewValidator()
+	err := pkg.Validate(data)
+
+	if err != nil {
+		return helpers.ResponseApiBadRequest(c, err.Error(), nil)
+	}
+
+	if data.Password != data.ConfirmPassword {
+		return helpers.ResponseApiBadRequest(c, "Password and password confirmation must be same", nil)
+	}
+
+	err = h.authService.ResetPassword(&data)
+
+	if err != nil {
+		respErr := err.(*schemas.ResponseApiError)
+		catchErr := helpers.CatchErrorResponseApi(respErr)
+
+		return helpers.ResponseApiError(c, catchErr.Message, catchErr.StatusCode, nil)
+	}
+
+	return helpers.ResponseApiCreated(c, "Password has been reset", nil)
+}

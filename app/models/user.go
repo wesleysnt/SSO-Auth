@@ -27,3 +27,11 @@ func (m *User) BeforeCreate(tx *gorm.DB) error {
 	return nil
 
 }
+
+func (m *User) BeforeUpdate(tx *gorm.DB) error {
+	hashedPass, _ := utils.HashPassword(m.Password)
+
+	tx.Statement.SetColumn("password", hashedPass)
+	return nil
+
+}

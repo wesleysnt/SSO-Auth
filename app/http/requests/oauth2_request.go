@@ -27,3 +27,13 @@ type IsLoggedInRequest struct {
 	Token    string `validate:"required" form:"token" json:"token"`
 	ClientId string `validate:"required" form:"client_id" json:"client_id"`
 }
+
+type RequestForgotPasswordRequest struct {
+	Email string `validate:"required,email" form:"email" json:"email"`
+}
+
+type ResetPasswordRequest struct {
+	Password        string `validate:"required" form:"password" json:"password"`
+	ConfirmPassword string `validate:"required" form:"confirm_password" json:"confirm_password"`
+	Token           string `validate:"required" form:"token" json:"token"`
+}

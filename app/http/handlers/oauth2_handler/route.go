@@ -11,4 +11,6 @@ func OAuth2Route(route fiber.Router) {
 	auth.Post("/login", handler.Login)
 	auth.Post("/verif-otp", handler.VerifOtp)
 	auth.Post("/is-logged-in", handler.IsLoggedIn)
+	auth.Post("/req-forgot-password", handler.RequestForgotPassword)
+	auth.Post("/reset-password", handler.ResetPassword)
 }
