@@ -10,6 +10,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gookit/color"
 )
 
 func main() {
@@ -46,6 +47,7 @@ func main() {
 	configs.ConnectDB()
 
 	routes.RegisterRoutes(app)
+	color.Blueln("This app is running on 127.0.0.1:" + configApp.AppPort)
 	log.Fatal(app.Listen(":" + configApp.AppPort))
 
 }
