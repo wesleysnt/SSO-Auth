@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"sso-auth/app/repositories"
 	"sso-auth/app/responses"
 )
@@ -15,10 +16,10 @@ func NewDashboardService() *DashboardService {
 	}
 }
 
-func (s *DashboardService) Get() (*responses.DashboardResponse, error) {
-	activeToken := s.dashboardRepositry.GetTotalActiveToken()
-	totalUser := s.dashboardRepositry.GetTotalUser()
-	latestLog := s.dashboardRepositry.GetLatestLog()
+func (s *DashboardService) Get(ctx context.Context) (*responses.DashboardResponse, error) {
+	activeToken := s.dashboardRepositry.GetTotalActiveToken(ctx)
+	totalUser := s.dashboardRepositry.GetTotalUser(ctx)
+	latestLog := s.dashboardRepositry.GetLatestLog(ctx)
 
 	return &responses.DashboardResponse{
 		TotalActiveToken: activeToken,

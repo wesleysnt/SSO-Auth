@@ -18,7 +18,7 @@ func NewDashboardHandler() *DashboardHandler {
 }
 
 func (h *DashboardHandler) Get(c *fiber.Ctx) error {
-	res, _ := h.dashboardService.Get()
+	res, _ := h.dashboardService.Get(c.UserContext())
 	if res == nil {
 
 		return helpers.ResponseApiError(c, "Something wrong while getting dashboard data", 500, nil)

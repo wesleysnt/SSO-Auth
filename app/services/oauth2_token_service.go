@@ -51,9 +51,9 @@ func (s *Oauth2TokenService) ValidateToken(request *requests.ValidateTokenReques
 	case requests.GrantTypeAuthCode:
 		res, err = s.authCodeService.ValidateToken(request, ctx)
 	case requests.GrantTypeClientCredential:
-		res, err = s.clientCredential.ValidateToken(request)
+		res, err = s.clientCredential.ValidateToken(request, ctx)
 	case requests.GrantTypePasswordCredential:
-		res, err = s.passwordCredential.ValidateToken(request)
+		res, err = s.passwordCredential.ValidateToken(request, ctx)
 	}
 
 	return
@@ -72,14 +72,14 @@ func (s *Oauth2TokenService) RefreshToken(request *requests.RefreshTokenRequest,
 
 	var userData models.User
 
-	err = s.authRepository.GetById(&userData, request.UserId)
+	err = s.authRepository.GetById(&userData, request.UserId, ctx)
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorNotFound,
 			Message: "User not found!",
 		}
 	}
-	err = s.refreshTokenRepository.Check(request.RefreshToken, clientData.ID, request.UserId)
+	err = s.refreshTokenRepository.Check(request.RefreshToken, clientData.ID, request.UserId, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -88,7 +88,7 @@ func (s *Oauth2TokenService) RefreshToken(request *requests.RefreshTokenRequest,
 		}
 	}
 
-	token, err := facades.ParseToken(request.RefreshToken, request.Secret)
+	token, err := facades.ParseToken(request.RefreshToken, request.Secret, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -97,11 +97,11 @@ func (s *Oauth2TokenService) RefreshToken(request *requests.RefreshTokenRequest,
 		}
 	}
 
-	clientId, _ := facades.GetClientIdFromToken(request.RefreshToken, request.Secret)
-	userId, _ := facades.GetUserIdFromToken(request.RefreshToken, request.Secret)
+	clientId, _ := facades.GetClientIdFromToken(request.RefreshToken, request.Secret, ctx)
+	userId, _ := facades.GetUserIdFromToken(request.RefreshToken, request.Secret, ctx)
 
 	// Generate access token
-	tokenString, err := facades.GenerateToken(request.Secret, clientId, userId, 2)
+	tokenString, err := facades.GenerateToken(request.Secret, clientId, userId, 2, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -110,7 +110,7 @@ func (s *Oauth2TokenService) RefreshToken(request *requests.RefreshTokenRequest,
 		}
 	}
 
-	token, err = facades.ParseToken(tokenString, request.Secret)
+	token, err = facades.ParseToken(tokenString, request.Secret, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -126,7 +126,7 @@ func (s *Oauth2TokenService) RefreshToken(request *requests.RefreshTokenRequest,
 		UserId:     userId,
 		ClientId:   clientData.ID,
 		ExpiryTime: tokenExpired.Time,
-	})
+	}, ctx)
 
 	if errSaveToken != nil {
 		return nil, &schemas.ResponseApiError{
@@ -137,7 +137,7 @@ func (s *Oauth2TokenService) RefreshToken(request *requests.RefreshTokenRequest,
 
 	// Generate Refresh Token
 
-	refreshTokenString, err := facades.GenerateToken(request.Secret, clientId, userId, 4)
+	refreshTokenString, err := facades.GenerateToken(request.Secret, clientId, userId, 4, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -153,7 +153,7 @@ func (s *Oauth2TokenService) RefreshToken(request *requests.RefreshTokenRequest,
 		UserId:     userId,
 		ClientId:   clientData.ID,
 		ExpiryTime: refreshTokenExpired.Time,
-	})
+	}, ctx)
 
 	if errSaveRefreshToken != nil {
 		return nil, &schemas.ResponseApiError{

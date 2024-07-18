@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"context"
 	"crypto/rand"
 	"fmt"
 	"math"
@@ -22,7 +23,7 @@ func NewOtp() Otp {
 	return Otp{otpRequestRepo: repositories.NewOtpRequestRepository()}
 }
 
-func (h *Otp) Save(userId uint, otpCode, UniqueCode string) (*models.OtpRequests, error) {
+func (h *Otp) Save(userId uint, otpCode, UniqueCode string, ctx context.Context) (*models.OtpRequests, error) {
 	var data models.OtpRequests
 	periode := os.Getenv("OTP_PERIODE")
 	convPeriode, _ := strconv.Atoi(periode)
@@ -33,10 +34,10 @@ func (h *Otp) Save(userId uint, otpCode, UniqueCode string) (*models.OtpRequests
 	data.ExpiredAt = time.Now().Add(time.Second * time.Duration(convPeriode+60))
 	data.UserId = userId
 
-	return h.otpRequestRepo.Store(&data)
+	return h.otpRequestRepo.Store(&data, ctx)
 }
 
-func (h *Otp) Resend(userId uint, otpCode, UniqueCode string) (*models.OtpRequests, error) {
+func (h *Otp) Resend(userId uint, otpCode, UniqueCode string, ctx context.Context) (*models.OtpRequests, error) {
 	var data models.OtpRequests
 	periode := os.Getenv("OTP_PERIODE")
 	convPeriode, _ := strconv.Atoi(periode)
@@ -48,21 +49,21 @@ func (h *Otp) Resend(userId uint, otpCode, UniqueCode string) (*models.OtpReques
 	data.UserId = userId
 
 	// delete data
-	err := h.deleteByCustId(userId)
+	err := h.deleteByCustId(userId, ctx)
 	if err != nil {
 		facades.Log().Infof("[Resend][OTP][DELETE][ERROR] %v", err)
 	}
 
-	return h.otpRequestRepo.Store(&data)
+	return h.otpRequestRepo.Store(&data, ctx)
 }
 
-func (h *Otp) delete(uniqueCode string) error {
-	err := h.otpRequestRepo.Delete(uniqueCode)
+func (h *Otp) delete(uniqueCode string, ctx context.Context) error {
+	err := h.otpRequestRepo.Delete(uniqueCode, ctx)
 	return err
 }
 
-func (h *Otp) deleteByCustId(custId uint) error {
-	err := h.otpRequestRepo.DeleteByCustId(custId)
+func (h *Otp) deleteByCustId(custId uint, ctx context.Context) error {
+	err := h.otpRequestRepo.DeleteByCustId(custId, ctx)
 	return err
 }
 
@@ -79,8 +80,8 @@ func (h *Otp) GenerateOTP() string {
 	return fmt.Sprintf("%0*d", maxDigits, bi)
 }
 
-func (h *Otp) IsOtpValid(uniqueCode, otp string) (bool, error) {
-	data, errData := h.otpRequestRepo.GetByUniqueCode(uniqueCode)
+func (h *Otp) IsOtpValid(uniqueCode, otp string, ctx context.Context) (bool, error) {
+	data, errData := h.otpRequestRepo.GetByUniqueCode(uniqueCode, ctx)
 
 	if errData != nil {
 		return false, fmt.Errorf("credentials invalid")
@@ -98,7 +99,7 @@ func (h *Otp) IsOtpValid(uniqueCode, otp string) (bool, error) {
 	}
 
 	// delete data
-	errDelete := h.delete(uniqueCode)
+	errDelete := h.delete(uniqueCode, ctx)
 
 	if errDelete != nil {
 		facades.Log().Infof("[IsOtpValid][DELETE][ERROR] %v", errDelete)

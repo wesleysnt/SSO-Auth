@@ -24,7 +24,7 @@ func (h *HistoryHandler) TokenHistory(c *fiber.Ctx) error {
 	limit := c.Query("limit")
 	sort := c.Query("sort")
 
-	res, err := h.historyService.TokenHistory(page, limit, sort)
+	res, err := h.historyService.TokenHistory(page, limit, sort, c.UserContext())
 
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)
@@ -42,7 +42,7 @@ func (h *HistoryHandler) RefreshTokenHistory(c *fiber.Ctx) error {
 	limit := c.Query("limit")
 	sort := c.Query("sort")
 
-	res, err := h.historyService.RefreshTokenHistory(page, limit, sort)
+	res, err := h.historyService.RefreshTokenHistory(page, limit, sort, c.UserContext())
 
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)
@@ -60,7 +60,7 @@ func (h *HistoryHandler) AuthCodeHistory(c *fiber.Ctx) error {
 	limit := c.Query("limit")
 	sort := c.Query("sort")
 
-	res, err := h.historyService.AuthCodeHistory(page, limit, sort)
+	res, err := h.historyService.AuthCodeHistory(page, limit, sort, c.UserContext())
 
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)

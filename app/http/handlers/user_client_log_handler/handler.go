@@ -23,7 +23,7 @@ func (h *UserClientLogHandler) List(c *fiber.Ctx) error {
 	limit := c.Query("limit")
 	sort := c.Query("sort")
 
-	res, err := h.userClientLogService.List(page, limit, sort)
+	res, err := h.userClientLogService.List(page, limit, sort, c.UserContext())
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)
 		catchErr := helpers.CatchErrorResponseApi(respErr)

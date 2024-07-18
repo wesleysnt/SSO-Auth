@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"strconv"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -18,26 +19,27 @@ import (
 var Tracer trace.Tracer
 var Tp *sdkTrace.TracerProvider
 
-func Init(ctx context.Context, endPoint string) (ctxMain context.Context, span trace.Span) {
+func Init(ctx context.Context, endPoint string) {
 	// init otel tracer
+	trace := false
+	trace, _ = strconv.ParseBool(os.Getenv("JAEGER_TRACE"))
 
-	exp, err := newExporter(ctx)
-	if err != nil {
-		log.Fatalf("failed to initialize exporter: %v", err)
+	if trace {
+		exp, err := newExporter(ctx)
+		if err != nil {
+			log.Fatalf("failed to initialize exporter: %v", err)
+		}
+		// Create a new tracer provider with a batch span processor and the given exporter.
+		Tp = newTraceProvider(exp)
+
+		// Handle shutdown properly so nothing leaks.
+		// defer func() { _ = tp.Shutdown(ctx) }()
+
+		otel.SetTracerProvider(Tp)
+
+		// Finally, set the tracer that can be used for this package.
+		Tracer = Tp.Tracer("SSO")
 	}
-	// Create a new tracer provider with a batch span processor and the given exporter.
-	Tp = newTraceProvider(exp)
-
-	// Handle shutdown properly so nothing leaks.
-	// defer func() { _ = tp.Shutdown(ctx) }()
-
-	otel.SetTracerProvider(Tp)
-
-	// Finally, set the tracer that can be used for this package.
-	Tracer = Tp.Tracer("SSO")
-
-	ctxMain, span = Tracer.Start(ctx, endPoint)
-	return
 }
 
 func newTraceProvider(exp sdkTrace.SpanExporter) *sdkTrace.TracerProvider {
@@ -75,4 +77,24 @@ func newExporter(ctx context.Context) (sdkTrace.SpanExporter, error) {
 	otlptracehttp.WithCompression(1)
 
 	return otlptrace.New(ctx, client)
+}
+
+func StartNewTrace(ctx context.Context, name string) (context.Context, trace.Span) {
+	if Tracer == nil {
+		return ctx, nil
+	}
+
+	return Tracer.Start(ctx, name)
+}
+
+func EndSpan(span trace.Span) {
+	if span != nil {
+		span.End()
+	}
+}
+
+func AddEvent(span trace.Span, name string, attributes ...trace.EventOption) {
+	if span != nil {
+		span.AddEvent(name, attributes...)
+	}
 }

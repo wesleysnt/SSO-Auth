@@ -10,6 +10,9 @@ import (
 	"sso-auth/app/schemas"
 	"sso-auth/app/utils"
 	"sso-auth/app/utils/otel"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type AuthService struct {
@@ -24,11 +27,11 @@ func NewAuthService() *AuthService {
 
 func (s *AuthService) Login(request *requests.LoginRequest, ctx context.Context) (*responses.AdminLoginResponses, error) {
 
-	ctxLogin, span := otel.Tracer.Start(ctx, "Start Login")
-	defer span.End()
+	ctxLogin, span := otel.StartNewTrace(ctx, "Start Login")
+	defer otel.EndSpan(span)
 
 	// check admin email
-	span.AddEvent("Checking user account")
+	otel.AddEvent(span, "Checking admin email", trace.WithAttributes(attribute.String("email", request.Email)))
 	var adminData models.Admin
 	err := s.adminRepository.Get(&adminData, request.Email, ctxLogin)
 	if err != nil {
@@ -38,8 +41,8 @@ func (s *AuthService) Login(request *requests.LoginRequest, ctx context.Context)
 		}
 	}
 
-	span.AddEvent("Checking user password")
-	auth := utils.CheckPasswordHash(request.Password, adminData.Password)
+	otel.AddEvent(span, "check password")
+	auth := utils.CheckPasswordHash(request.Password, adminData.Password, ctx)
 
 	if !auth {
 		return nil, &schemas.ResponseApiError{
@@ -49,8 +52,8 @@ func (s *AuthService) Login(request *requests.LoginRequest, ctx context.Context)
 	}
 
 	// Generate access token
-	span.AddEvent("Generating access token")
-	tokenString, err := facades.GenerateToken("", "", adminData.ID, 2)
+	otel.AddEvent(span, "Generating access token")
+	tokenString, err := facades.GenerateToken("", "", adminData.ID, 2, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -59,7 +62,7 @@ func (s *AuthService) Login(request *requests.LoginRequest, ctx context.Context)
 		}
 	}
 
-	token, err := facades.ParseToken(tokenString, "")
+	token, err := facades.ParseToken(tokenString, "", ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -70,7 +73,7 @@ func (s *AuthService) Login(request *requests.LoginRequest, ctx context.Context)
 
 	tokenExpired, _ := token.Claims.GetExpirationTime()
 
-	span.AddEvent("Generating response")
+	otel.AddEvent(span, "Generating response")
 	res := responses.AdminLoginResponses{
 		Id:    adminData.ID,
 		Email: adminData.Email,

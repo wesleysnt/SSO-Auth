@@ -46,7 +46,7 @@ func (s *AuthCodeService) Login(request *requests.OAuth2LoginRequest, ctx contex
 	}
 
 	var userData models.User
-	err = s.authRepository.GetUser(&userData, request.Email)
+	err = s.authRepository.GetUser(&userData, request.Email, ctx)
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorForbidden,
@@ -54,7 +54,7 @@ func (s *AuthCodeService) Login(request *requests.OAuth2LoginRequest, ctx contex
 		}
 	}
 
-	auth := utils.CheckPasswordHash(request.Password, userData.Password)
+	auth := utils.CheckPasswordHash(request.Password, userData.Password, ctx)
 
 	if !auth {
 		return nil, &schemas.ResponseApiError{
@@ -71,7 +71,7 @@ func (s *AuthCodeService) Login(request *requests.OAuth2LoginRequest, ctx contex
 		ClientId:   clientData.ID,
 		UserId:     userData.ID,
 	}
-	err = s.authCodeRepository.Create(&authCodeData)
+	err = s.authCodeRepository.Create(&authCodeData, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -86,7 +86,7 @@ func (s *AuthCodeService) Login(request *requests.OAuth2LoginRequest, ctx contex
 		Method:   "s256",
 	}
 
-	err = s.codeChallengeRepository.Create(&codeChallengeData)
+	err = s.codeChallengeRepository.Create(&codeChallengeData, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -123,7 +123,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest, ctx context.Cont
 	}
 
 	var codeChallengeData models.CodeChallenge
-	err = s.codeChallengeRepository.GetChallenge(request.CodeChallengeUniqueCode, &codeChallengeData)
+	err = s.codeChallengeRepository.GetChallenge(request.CodeChallengeUniqueCode, &codeChallengeData, ctx)
 
 	if err != nil || !utils.VerifyCode(request.CodeVerifier, codeChallengeData.Code) || codeChallengeData.ClientId != clientData.ID {
 		return nil, &schemas.ResponseApiError{
@@ -134,7 +134,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest, ctx context.Cont
 
 	var userData models.User
 
-	err = s.authRepository.GetById(&userData, request.UserId)
+	err = s.authRepository.GetById(&userData, request.UserId, ctx)
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorNotFound,
@@ -142,7 +142,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest, ctx context.Cont
 		}
 	}
 
-	err = s.authCodeRepository.GetCode(request.AuthCode, request.UserId, clientData.ID, &authCode)
+	err = s.authCodeRepository.GetCode(request.AuthCode, request.UserId, clientData.ID, &authCode, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -158,7 +158,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest, ctx context.Cont
 	}
 
 	// Generate access token
-	tokenString, err := facades.GenerateToken(clientData.Secret, *clientData.ClientId, userData.ID, 2)
+	tokenString, err := facades.GenerateToken(clientData.Secret, *clientData.ClientId, userData.ID, 2, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -167,7 +167,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest, ctx context.Cont
 		}
 	}
 
-	token, err := facades.ParseToken(tokenString, clientData.Secret)
+	token, err := facades.ParseToken(tokenString, clientData.Secret, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -183,7 +183,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest, ctx context.Cont
 		UserId:     userData.ID,
 		ClientId:   clientData.ID,
 		ExpiryTime: tokenExpired.Time,
-	})
+	}, ctx)
 
 	if errSaveToken != nil {
 		return nil, &schemas.ResponseApiError{
@@ -194,7 +194,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest, ctx context.Cont
 
 	// Generate Refresh Token
 
-	refreshTokenString, err := facades.GenerateToken(clientData.Secret, *clientData.ClientId, userData.ID, 4)
+	refreshTokenString, err := facades.GenerateToken(clientData.Secret, *clientData.ClientId, userData.ID, 4, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -210,7 +210,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest, ctx context.Cont
 		UserId:     userData.ID,
 		ClientId:   clientData.ID,
 		ExpiryTime: refreshTokenExpired.Time,
-	})
+	}, ctx)
 
 	if errSaveRefreshToken != nil {
 		return nil, &schemas.ResponseApiError{
@@ -219,7 +219,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest, ctx context.Cont
 		}
 	}
 
-	err = s.createUserClientLogService.Create(userData.ID, clientData.ID)
+	err = s.createUserClientLogService.Create(userData.ID, clientData.ID, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -253,7 +253,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest, ctx context.Cont
 
 func (s *AuthCodeService) ValidateToken(request *requests.ValidateTokenRequest, ctx context.Context) (*responses.ValidateTokenResponse, error) {
 	var codeChallengeData models.CodeChallenge
-	s.codeChallengeRepository.GetChallenge(request.CodeChallengeUniqueCode, &codeChallengeData)
+	s.codeChallengeRepository.GetChallenge(request.CodeChallengeUniqueCode, &codeChallengeData, ctx)
 	if !utils.VerifyCode(request.CodeVerifier, codeChallengeData.Code) {
 		return nil, &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorBadRequest,
@@ -261,7 +261,7 @@ func (s *AuthCodeService) ValidateToken(request *requests.ValidateTokenRequest, 
 		}
 	}
 
-	tokenData, err := s.accessTokenRepository.GetByToken(request.Token)
+	tokenData, err := s.accessTokenRepository.GetByToken(request.Token, ctx)
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorUnauthorized,
@@ -271,15 +271,15 @@ func (s *AuthCodeService) ValidateToken(request *requests.ValidateTokenRequest, 
 	var clientData models.Client
 	s.clientRepository.GetById(&clientData, tokenData.ClientId, ctx)
 	// Verify secret
-	token, err := facades.ParseToken(request.Token, clientData.Secret)
+	token, err := facades.ParseToken(request.Token, clientData.Secret, ctx)
 
 	if err != nil {
 		return nil, err
 	}
 
 	tokenExp, _ := token.Claims.GetExpirationTime()
-	clientId, _ := facades.GetClientIdFromToken(request.Token, clientData.Secret)
-	userId, _ := facades.GetUserIdFromToken(request.Token, clientData.Secret)
+	clientId, _ := facades.GetClientIdFromToken(request.Token, clientData.Secret, ctx)
+	userId, _ := facades.GetUserIdFromToken(request.Token, clientData.Secret, ctx)
 	res := &responses.ValidateTokenResponse{
 		Active:   true,
 		Exp:      *tokenExp,

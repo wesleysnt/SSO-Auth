@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"sso-auth/app/repositories"
 	"sso-auth/app/responses"
 	"sso-auth/app/utils"
@@ -20,7 +21,7 @@ func NewHistoryService() *HistoryService {
 	}
 }
 
-func (s *HistoryService) TokenHistory(page, limit, sort string) (*utils.Pagination, error) {
+func (s *HistoryService) TokenHistory(page, limit, sort string, ctx context.Context) (*utils.Pagination, error) {
 	var scan []*responses.HistoryResponse
 
 	paginateRequest := utils.PaginationRequest{
@@ -29,7 +30,7 @@ func (s *HistoryService) TokenHistory(page, limit, sort string) (*utils.Paginati
 		Sort:  sort,
 	}
 	pPage, pLimit, pSort := paginateRequest.SetPagination()
-	res, err := s.accessTokenRepository.GetHistory(&scan, pPage, pLimit, pSort)
+	res, err := s.accessTokenRepository.GetHistory(&scan, pPage, pLimit, pSort, ctx)
 
 	if err != nil {
 		return nil, err
@@ -40,7 +41,7 @@ func (s *HistoryService) TokenHistory(page, limit, sort string) (*utils.Paginati
 	return res, nil
 }
 
-func (s *HistoryService) RefreshTokenHistory(page, limit, sort string) (*utils.Pagination, error) {
+func (s *HistoryService) RefreshTokenHistory(page, limit, sort string, ctx context.Context) (*utils.Pagination, error) {
 	var scan []*responses.HistoryResponse
 
 	paginateRequest := utils.PaginationRequest{
@@ -49,7 +50,7 @@ func (s *HistoryService) RefreshTokenHistory(page, limit, sort string) (*utils.P
 		Sort:  sort,
 	}
 	pPage, pLimit, pSort := paginateRequest.SetPagination()
-	res, err := s.refreshTokenRepository.GetHistory(&scan, pPage, pLimit, pSort)
+	res, err := s.refreshTokenRepository.GetHistory(&scan, pPage, pLimit, pSort, ctx)
 
 	if err != nil {
 		return nil, err
@@ -60,7 +61,7 @@ func (s *HistoryService) RefreshTokenHistory(page, limit, sort string) (*utils.P
 	return res, nil
 }
 
-func (s *HistoryService) AuthCodeHistory(page, limit, sort string) (*utils.Pagination, error) {
+func (s *HistoryService) AuthCodeHistory(page, limit, sort string, ctx context.Context) (*utils.Pagination, error) {
 	var scan []*responses.HistoryResponse
 
 	paginateRequest := utils.PaginationRequest{
@@ -69,7 +70,7 @@ func (s *HistoryService) AuthCodeHistory(page, limit, sort string) (*utils.Pagin
 		Sort:  sort,
 	}
 	pPage, pLimit, pSort := paginateRequest.SetPagination()
-	res, err := s.authCodeRepository.GetHistory(&scan, pPage, pLimit, pSort)
+	res, err := s.authCodeRepository.GetHistory(&scan, pPage, pLimit, pSort, ctx)
 
 	if err != nil {
 		return nil, err

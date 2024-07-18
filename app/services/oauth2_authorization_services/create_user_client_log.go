@@ -1,6 +1,7 @@
 package oauth2authorizationservices
 
 import (
+	"context"
 	"sso-auth/app/models"
 	"sso-auth/app/repositories"
 )
@@ -15,13 +16,13 @@ func NewCreateUserClientLogService() *CreateUserClientLogService {
 	}
 }
 
-func (s *CreateUserClientLogService) Create(userId, clientId uint) error {
-	err := s.createUserClientLogRepository.Check(userId, clientId)
+func (s *CreateUserClientLogService) Create(userId, clientId uint, ctx context.Context) error {
+	err := s.createUserClientLogRepository.Check(userId, clientId, ctx)
 	if err {
 		return nil
 	}
 	return s.createUserClientLogRepository.Create(&models.UserClientLog{
 		UserId:   userId,
 		ClientId: clientId,
-	})
+	}, ctx)
 }

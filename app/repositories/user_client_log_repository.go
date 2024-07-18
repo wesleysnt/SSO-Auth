@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"sso-auth/app/facades"
 	"sso-auth/app/models"
 	"sso-auth/app/responses"
@@ -17,22 +18,22 @@ func NewUserClientLogRepository() *UserClientLogRepository {
 	return &UserClientLogRepository{orm: facades.Orm()}
 }
 
-func (r *UserClientLogRepository) Create(data *models.UserClientLog) error {
-	return r.orm.Create(data).Error
+func (r *UserClientLogRepository) Create(data *models.UserClientLog, ctx context.Context) error {
+	return r.orm.WithContext(ctx).Create(data).Error
 }
 
-func (r *UserClientLogRepository) Check(userId, clientId uint) bool {
+func (r *UserClientLogRepository) Check(userId, clientId uint, ctx context.Context) bool {
 	var count int64
-	r.orm.Model(&models.UserClientLog{}).Where("user_id = ? AND client_id = ?", userId, clientId).Count(&count)
+	r.orm.WithContext(ctx).Model(&models.UserClientLog{}).Where("user_id = ? AND client_id = ?", userId, clientId).Count(&count)
 	return count > 0
 }
 
-func (r *UserClientLogRepository) List(scan *[]responses.UserClientLogResponse, page, limit int, sort string) (*utils.Pagination, error) {
+func (r *UserClientLogRepository) List(scan *[]responses.UserClientLogResponse, page, limit int, sort string, ctx context.Context) (*utils.Pagination, error) {
 	var pagination utils.Pagination
 
 	var paginate func(methods *gorm.DB) *gorm.DB
 
-	q := r.orm.Model(&models.UserClientLog{})
+	q := r.orm.WithContext(ctx).Model(&models.UserClientLog{})
 
 	paginate = pagination.SetLimit(limit).SetPage(page).SetSort(sort).Pagination(q)
 

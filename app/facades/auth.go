@@ -1,12 +1,14 @@
 package facades
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"errors"
 	"fmt"
 	"math/rand"
 	"os"
+	"sso-auth/app/utils/otel"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -25,9 +27,12 @@ func ValidMAC(key []byte) {
 	HmacSecret = mac.Sum(nil)
 }
 
-func GenerateToken(secret, clientId string, userId, expiredDuration uint) (string, error) {
+func GenerateToken(secret, clientId string, userId, expiredDuration uint, ctx context.Context) (string, error) {
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
+
+	_, span := otel.StartNewTrace(ctx, "GenerateToken")
+	defer otel.EndSpan(span)
 
 	if secret == "" {
 		secret = os.Getenv("JWT_SECRET")
@@ -66,7 +71,9 @@ func RandomString(n int) string {
 	return string(s)
 }
 
-func ParseToken(tokenString, secret string) (token *jwt.Token, err error) {
+func ParseToken(tokenString, secret string, ctx context.Context) (token *jwt.Token, err error) {
+	_, span := otel.StartNewTrace(ctx, "ParseToken")
+	defer otel.EndSpan(span)
 	if secret == "" {
 		secret = os.Getenv("JWT_SECRET")
 	}
@@ -86,8 +93,8 @@ func ParseToken(tokenString, secret string) (token *jwt.Token, err error) {
 
 }
 
-func GetUserIdFromToken(tokenString, secret string) (uint, error) {
-	token, err := ParseToken(tokenString, secret)
+func GetUserIdFromToken(tokenString, secret string, ctx context.Context) (uint, error) {
+	token, err := ParseToken(tokenString, secret, ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -96,8 +103,8 @@ func GetUserIdFromToken(tokenString, secret string) (uint, error) {
 	return claims.UserId, nil
 }
 
-func GetClientIdFromToken(tokenString, secret string) (string, error) {
-	token, err := ParseToken(tokenString, secret)
+func GetClientIdFromToken(tokenString, secret string, ctx context.Context) (string, error) {
+	token, err := ParseToken(tokenString, secret, ctx)
 	if err != nil {
 		return "", err
 	}

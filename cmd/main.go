@@ -48,12 +48,14 @@ func main() {
 	otel.Init(ctx, "")
 	defer otel.Tp.Shutdown(ctx)
 
-	app.Use(otelfiber.Middleware(
-		otelfiber.WithTracerProvider(otel.Tp),
-		otelfiber.WithSpanNameFormatter(func(c *fiber.Ctx) string {
-			return c.Path() + " - " + c.Method()
-		}),
-	))
+	if otel.Tp != nil {
+		app.Use(otelfiber.Middleware(
+			otelfiber.WithTracerProvider(otel.Tp),
+			otelfiber.WithSpanNameFormatter(func(c *fiber.Ctx) string {
+				return c.Path() + " - " + c.Method()
+			}),
+		))
+	}
 	app.Use(logger.New(logger.Config{
 		Format: "[${ip}]:${port} ${status} - ${method} ${path}\n",
 	}))
