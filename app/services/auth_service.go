@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"sso-auth/app/facades"
 	"sso-auth/app/http/requests"
 	"sso-auth/app/models"
@@ -8,6 +9,10 @@ import (
 	"sso-auth/app/responses"
 	"sso-auth/app/schemas"
 	"sso-auth/app/utils"
+	"sso-auth/app/utils/otel"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type AuthService struct {
@@ -20,10 +25,15 @@ func NewAuthService() *AuthService {
 	}
 }
 
-func (s *AuthService) Login(request *requests.LoginRequest) (*responses.AdminLoginResponses, error) {
+func (s *AuthService) Login(request *requests.LoginRequest, ctx context.Context) (*responses.AdminLoginResponses, error) {
+
+	ctxLogin, span := otel.StartNewTrace(ctx, "Start Login")
+	defer otel.EndSpan(span)
+
 	// check admin email
+	otel.AddEvent(span, "Checking admin email", trace.WithAttributes(attribute.String("email", request.Email)))
 	var adminData models.Admin
-	err := s.adminRepository.Get(&adminData, request.Email)
+	err := s.adminRepository.Get(&adminData, request.Email, ctxLogin)
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorForbidden,
@@ -31,7 +41,8 @@ func (s *AuthService) Login(request *requests.LoginRequest) (*responses.AdminLog
 		}
 	}
 
-	auth := utils.CheckPasswordHash(request.Password, adminData.Password)
+	otel.AddEvent(span, "check password")
+	auth := utils.CheckPasswordHash(request.Password, adminData.Password, ctx)
 
 	if !auth {
 		return nil, &schemas.ResponseApiError{
@@ -41,7 +52,8 @@ func (s *AuthService) Login(request *requests.LoginRequest) (*responses.AdminLog
 	}
 
 	// Generate access token
-	tokenString, err := facades.GenerateToken("", "", adminData.ID, 2)
+	otel.AddEvent(span, "Generating access token")
+	tokenString, err := facades.GenerateToken("", "", adminData.ID, 2, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -50,7 +62,7 @@ func (s *AuthService) Login(request *requests.LoginRequest) (*responses.AdminLog
 		}
 	}
 
-	token, err := facades.ParseToken(tokenString, "")
+	token, err := facades.ParseToken(tokenString, "", ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -61,6 +73,7 @@ func (s *AuthService) Login(request *requests.LoginRequest) (*responses.AdminLog
 
 	tokenExpired, _ := token.Claims.GetExpirationTime()
 
+	otel.AddEvent(span, "Generating response")
 	res := responses.AdminLoginResponses{
 		Id:    adminData.ID,
 		Email: adminData.Email,

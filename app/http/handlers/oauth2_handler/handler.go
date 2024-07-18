@@ -32,7 +32,7 @@ func (h *OAuth2Handler) Register(c *fiber.Ctx) error {
 		return helpers.ResponseApiBadRequest(c, err.Error(), nil)
 	}
 
-	res, err := h.authService.Register(&data)
+	res, err := h.authService.Register(&data, c.UserContext())
 
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)
@@ -56,7 +56,7 @@ func (h *OAuth2Handler) Login(c *fiber.Ctx) (err error) {
 		return helpers.ResponseApiBadRequest(c, err.Error(), nil)
 
 	}
-	res, err := h.authService.Login(&data)
+	res, err := h.authService.Login(&data, c.UserContext())
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)
 		catchErr := helpers.CatchErrorResponseApi(respErr)
@@ -78,7 +78,7 @@ func (h *OAuth2Handler) VerifOtp(c *fiber.Ctx) error {
 		return helpers.ResponseApiBadRequest(c, err.Error(), nil)
 	}
 
-	res, err := h.authService.VerifOtp(&data)
+	res, err := h.authService.VerifOtp(&data, c.UserContext())
 
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)
@@ -102,7 +102,7 @@ func (h *OAuth2Handler) IsLoggedIn(c *fiber.Ctx) error {
 		return helpers.ResponseApiBadRequest(c, err.Error(), nil)
 	}
 
-	res, err := h.authService.IsLoggedIn(&data)
+	res, err := h.authService.IsLoggedIn(&data, c.UserContext())
 
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)
@@ -126,7 +126,7 @@ func (h *OAuth2Handler) RequestForgotPassword(c *fiber.Ctx) error {
 		return helpers.ResponseApiBadRequest(c, err.Error(), nil)
 	}
 
-	err = h.authService.RequestForgotPassword(&data)
+	err = h.authService.RequestForgotPassword(&data, c.UserContext())
 
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)
@@ -154,7 +154,7 @@ func (h *OAuth2Handler) ResetPassword(c *fiber.Ctx) error {
 		return helpers.ResponseApiBadRequest(c, "Password and password confirmation must be same", nil)
 	}
 
-	err = h.authService.ResetPassword(&data)
+	err = h.authService.ResetPassword(&data, c.UserContext())
 
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)

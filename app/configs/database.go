@@ -8,6 +8,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"gorm.io/plugin/opentelemetry/tracing"
 )
 
 type dbCon struct {
@@ -35,6 +36,10 @@ func InitDB() (db *gorm.DB, err error) {
 	})
 
 	if err != nil {
+		panic(err)
+	}
+
+	if err := db.Use(tracing.NewPlugin(tracing.WithoutMetrics())); err != nil {
 		panic(err)
 	}
 

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"sso-auth/app/utils"
 	"time"
 
@@ -20,7 +21,8 @@ type User struct {
 }
 
 func (m *User) BeforeCreate(tx *gorm.DB) error {
-	hashedPass, _ := utils.HashPassword(m.Password)
+	ctx := context.TODO()
+	hashedPass, _ := utils.HashPassword(m.Password, ctx)
 
 	m.Password = hashedPass
 
@@ -29,7 +31,8 @@ func (m *User) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (m *User) BeforeUpdate(tx *gorm.DB) error {
-	hashedPass, _ := utils.HashPassword(m.Password)
+	ctx := context.TODO()
+	hashedPass, _ := utils.HashPassword(m.Password, ctx)
 
 	tx.Statement.SetColumn("password", hashedPass)
 	return nil

@@ -1,6 +1,7 @@
 package oauth2authorizationservices
 
 import (
+	"context"
 	"sso-auth/app/facades"
 	"sso-auth/app/http/requests"
 	"sso-auth/app/models"
@@ -33,9 +34,9 @@ func NewAuthCodeService() *AuthCodeService {
 	}
 }
 
-func (s *AuthCodeService) Login(request *requests.OAuth2LoginRequest) (any, error) {
+func (s *AuthCodeService) Login(request *requests.OAuth2LoginRequest, ctx context.Context) (any, error) {
 	var clientData models.Client
-	err := s.clientRepository.GetByClientId(&clientData, request.ClientId)
+	err := s.clientRepository.GetByClientId(&clientData, request.ClientId, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -45,7 +46,7 @@ func (s *AuthCodeService) Login(request *requests.OAuth2LoginRequest) (any, erro
 	}
 
 	var userData models.User
-	err = s.authRepository.GetUser(&userData, request.Email)
+	err = s.authRepository.GetUser(&userData, request.Email, ctx)
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorForbidden,
@@ -53,7 +54,7 @@ func (s *AuthCodeService) Login(request *requests.OAuth2LoginRequest) (any, erro
 		}
 	}
 
-	auth := utils.CheckPasswordHash(request.Password, userData.Password)
+	auth := utils.CheckPasswordHash(request.Password, userData.Password, ctx)
 
 	if !auth {
 		return nil, &schemas.ResponseApiError{
@@ -70,7 +71,7 @@ func (s *AuthCodeService) Login(request *requests.OAuth2LoginRequest) (any, erro
 		ClientId:   clientData.ID,
 		UserId:     userData.ID,
 	}
-	err = s.authCodeRepository.Create(&authCodeData)
+	err = s.authCodeRepository.Create(&authCodeData, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -85,7 +86,7 @@ func (s *AuthCodeService) Login(request *requests.OAuth2LoginRequest) (any, erro
 		Method:   "s256",
 	}
 
-	err = s.codeChallengeRepository.Create(&codeChallengeData)
+	err = s.codeChallengeRepository.Create(&codeChallengeData, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -108,11 +109,11 @@ func (s *AuthCodeService) Login(request *requests.OAuth2LoginRequest) (any, erro
 	return &res, nil
 }
 
-func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.TokenResponse, error) {
+func (s *AuthCodeService) Token(request *requests.TokenRequest, ctx context.Context) (*responses.TokenResponse, error) {
 	var authCode models.AuthCode
 
 	var clientData models.Client
-	err := s.clientRepository.GetByClientId(&clientData, request.ClientId)
+	err := s.clientRepository.GetByClientId(&clientData, request.ClientId, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -122,7 +123,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.Toke
 	}
 
 	var codeChallengeData models.CodeChallenge
-	err = s.codeChallengeRepository.GetChallenge(request.CodeChallengeUniqueCode, &codeChallengeData)
+	err = s.codeChallengeRepository.GetChallenge(request.CodeChallengeUniqueCode, &codeChallengeData, ctx)
 
 	if err != nil || !utils.VerifyCode(request.CodeVerifier, codeChallengeData.Code) || codeChallengeData.ClientId != clientData.ID {
 		return nil, &schemas.ResponseApiError{
@@ -133,7 +134,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.Toke
 
 	var userData models.User
 
-	err = s.authRepository.GetById(&userData, request.UserId)
+	err = s.authRepository.GetById(&userData, request.UserId, ctx)
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorNotFound,
@@ -141,7 +142,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.Toke
 		}
 	}
 
-	err = s.authCodeRepository.GetCode(request.AuthCode, request.UserId, clientData.ID, &authCode)
+	err = s.authCodeRepository.GetCode(request.AuthCode, request.UserId, clientData.ID, &authCode, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -157,7 +158,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.Toke
 	}
 
 	// Generate access token
-	tokenString, err := facades.GenerateToken(clientData.Secret, *clientData.ClientId, userData.ID, 2)
+	tokenString, err := facades.GenerateToken(clientData.Secret, *clientData.ClientId, userData.ID, 2, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -166,7 +167,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.Toke
 		}
 	}
 
-	token, err := facades.ParseToken(tokenString, clientData.Secret)
+	token, err := facades.ParseToken(tokenString, clientData.Secret, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -182,7 +183,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.Toke
 		UserId:     userData.ID,
 		ClientId:   clientData.ID,
 		ExpiryTime: tokenExpired.Time,
-	})
+	}, ctx)
 
 	if errSaveToken != nil {
 		return nil, &schemas.ResponseApiError{
@@ -193,7 +194,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.Toke
 
 	// Generate Refresh Token
 
-	refreshTokenString, err := facades.GenerateToken(clientData.Secret, *clientData.ClientId, userData.ID, 4)
+	refreshTokenString, err := facades.GenerateToken(clientData.Secret, *clientData.ClientId, userData.ID, 4, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -209,7 +210,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.Toke
 		UserId:     userData.ID,
 		ClientId:   clientData.ID,
 		ExpiryTime: refreshTokenExpired.Time,
-	})
+	}, ctx)
 
 	if errSaveRefreshToken != nil {
 		return nil, &schemas.ResponseApiError{
@@ -218,7 +219,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.Toke
 		}
 	}
 
-	err = s.createUserClientLogService.Create(userData.ID, clientData.ID)
+	err = s.createUserClientLogService.Create(userData.ID, clientData.ID, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -250,9 +251,9 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.Toke
 	return &res, nil
 }
 
-func (s *AuthCodeService) ValidateToken(request *requests.ValidateTokenRequest) (*responses.ValidateTokenResponse, error) {
+func (s *AuthCodeService) ValidateToken(request *requests.ValidateTokenRequest, ctx context.Context) (*responses.ValidateTokenResponse, error) {
 	var codeChallengeData models.CodeChallenge
-	s.codeChallengeRepository.GetChallenge(request.CodeChallengeUniqueCode, &codeChallengeData)
+	s.codeChallengeRepository.GetChallenge(request.CodeChallengeUniqueCode, &codeChallengeData, ctx)
 	if !utils.VerifyCode(request.CodeVerifier, codeChallengeData.Code) {
 		return nil, &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorBadRequest,
@@ -260,7 +261,7 @@ func (s *AuthCodeService) ValidateToken(request *requests.ValidateTokenRequest) 
 		}
 	}
 
-	tokenData, err := s.accessTokenRepository.GetByToken(request.Token)
+	tokenData, err := s.accessTokenRepository.GetByToken(request.Token, ctx)
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorUnauthorized,
@@ -268,17 +269,17 @@ func (s *AuthCodeService) ValidateToken(request *requests.ValidateTokenRequest) 
 		}
 	}
 	var clientData models.Client
-	s.clientRepository.GetById(&clientData, tokenData.ClientId)
+	s.clientRepository.GetById(&clientData, tokenData.ClientId, ctx)
 	// Verify secret
-	token, err := facades.ParseToken(request.Token, clientData.Secret)
+	token, err := facades.ParseToken(request.Token, clientData.Secret, ctx)
 
 	if err != nil {
 		return nil, err
 	}
 
 	tokenExp, _ := token.Claims.GetExpirationTime()
-	clientId, _ := facades.GetClientIdFromToken(request.Token, clientData.Secret)
-	userId, _ := facades.GetUserIdFromToken(request.Token, clientData.Secret)
+	clientId, _ := facades.GetClientIdFromToken(request.Token, clientData.Secret, ctx)
+	userId, _ := facades.GetUserIdFromToken(request.Token, clientData.Secret, ctx)
 	res := &responses.ValidateTokenResponse{
 		Active:   true,
 		Exp:      *tokenExp,

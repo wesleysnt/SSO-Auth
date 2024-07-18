@@ -1,6 +1,7 @@
 package oauth2authorizationservices
 
 import (
+	"context"
 	"sso-auth/app/facades"
 	"sso-auth/app/http/requests"
 	"sso-auth/app/models"
@@ -8,6 +9,7 @@ import (
 	"sso-auth/app/responses"
 	"sso-auth/app/schemas"
 	"sso-auth/app/utils"
+	"sso-auth/app/utils/otel"
 )
 
 type PasswordCredetialService struct {
@@ -28,9 +30,11 @@ func NewPasswordCredentialService() *PasswordCredetialService {
 	}
 }
 
-func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest) (any, error) {
+func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest, ctx context.Context) (any, error) {
+	ctxLogin, span := otel.StartNewTrace(ctx, "PasswordCredetialService.Login")
+	defer otel.EndSpan(span)
 	var clientData models.Client
-	err := s.clientRepository.GetByClientId(&clientData, request.ClientId)
+	err := s.clientRepository.GetByClientId(&clientData, request.ClientId, ctxLogin)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -41,7 +45,7 @@ func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest) (
 
 	var userData models.User
 
-	err = s.authRepository.GetUser(&userData, request.Email)
+	err = s.authRepository.GetUser(&userData, request.Email, ctxLogin)
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorForbidden,
@@ -49,7 +53,7 @@ func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest) (
 		}
 	}
 
-	auth := utils.CheckPasswordHash(request.Password, userData.Password)
+	auth := utils.CheckPasswordHash(request.Password, userData.Password, ctxLogin)
 
 	if !auth {
 		return nil, &schemas.ResponseApiError{
@@ -59,7 +63,7 @@ func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest) (
 	}
 
 	// Generate access token
-	tokenString, err := facades.GenerateToken(clientData.Secret, *clientData.ClientId, userData.ID, 2)
+	tokenString, err := facades.GenerateToken(clientData.Secret, *clientData.ClientId, userData.ID, 2, ctxLogin)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -68,7 +72,7 @@ func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest) (
 		}
 	}
 
-	token, err := facades.ParseToken(tokenString, clientData.Secret)
+	token, err := facades.ParseToken(tokenString, clientData.Secret, ctxLogin)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -84,7 +88,7 @@ func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest) (
 		UserId:     userData.ID,
 		ClientId:   clientData.ID,
 		ExpiryTime: tokenExpired.Time,
-	})
+	}, ctxLogin)
 
 	if errSaveToken != nil {
 		return nil, &schemas.ResponseApiError{
@@ -95,7 +99,7 @@ func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest) (
 
 	// Generate Refresh Token
 
-	refreshTokenString, err := facades.GenerateToken(clientData.Secret, *clientData.ClientId, userData.ID, 4)
+	refreshTokenString, err := facades.GenerateToken(clientData.Secret, *clientData.ClientId, userData.ID, 4, ctxLogin)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -111,7 +115,7 @@ func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest) (
 		UserId:     userData.ID,
 		ClientId:   clientData.ID,
 		ExpiryTime: refreshTokenExpired.Time,
-	})
+	}, ctx)
 
 	if errSaveRefreshToken != nil {
 		return nil, &schemas.ResponseApiError{
@@ -134,7 +138,7 @@ func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest) (
 		},
 	}
 
-	err = s.createUserClientLogService.Create(userData.ID, clientData.ID)
+	err = s.createUserClientLogService.Create(userData.ID, clientData.ID, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -146,16 +150,16 @@ func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest) (
 	return &res, nil
 }
 
-func (s *PasswordCredetialService) ValidateToken(request *requests.ValidateTokenRequest) (*responses.ValidateTokenResponse, error) {
-	token, err := facades.ParseToken(request.Token, request.Secret)
+func (s *PasswordCredetialService) ValidateToken(request *requests.ValidateTokenRequest, ctx context.Context) (*responses.ValidateTokenResponse, error) {
+	token, err := facades.ParseToken(request.Token, request.Secret, ctx)
 
 	if err != nil {
 		return nil, err
 	}
 
 	tokenExp, _ := token.Claims.GetExpirationTime()
-	clientId, _ := facades.GetClientIdFromToken(request.Token, request.Secret)
-	userId, _ := facades.GetUserIdFromToken(request.Token, request.Secret)
+	clientId, _ := facades.GetClientIdFromToken(request.Token, request.Secret, ctx)
+	userId, _ := facades.GetUserIdFromToken(request.Token, request.Secret, ctx)
 	res := &responses.ValidateTokenResponse{
 		Active:   true,
 		Exp:      *tokenExp,

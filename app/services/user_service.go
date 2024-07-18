@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"sso-auth/app/models"
 	"sso-auth/app/repositories"
 	"sso-auth/app/responses"
@@ -18,7 +19,7 @@ func NewUserService() *UserService {
 	}
 }
 
-func (s *UserService) List(page, limit, sort string) (*utils.Pagination, error) {
+func (s *UserService) List(page, limit, sort string, ctx context.Context) (*utils.Pagination, error) {
 	var scan []models.User
 	var resp []responses.UserResponses
 	paginateRequest := utils.PaginationRequest{
@@ -28,7 +29,7 @@ func (s *UserService) List(page, limit, sort string) (*utils.Pagination, error) 
 	}
 	pPage, pLimit, pSort := paginateRequest.SetPagination()
 
-	res, err := s.userRepository.List(&scan, pPage, pLimit, pSort)
+	res, err := s.userRepository.List(&scan, pPage, pLimit, pSort, ctx)
 
 	if err != nil {
 		return nil, err
@@ -49,11 +50,11 @@ func (s *UserService) List(page, limit, sort string) (*utils.Pagination, error) 
 	return res, nil
 }
 
-func (s *UserService) GetById(id uint) (*responses.UserResponses, error) {
+func (s *UserService) GetById(id uint, ctx context.Context) (*responses.UserResponses, error) {
 	var scan models.User
 	var resp responses.UserResponses
 
-	err := s.userRepository.GetById(&scan, id)
+	err := s.userRepository.GetById(&scan, id, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{

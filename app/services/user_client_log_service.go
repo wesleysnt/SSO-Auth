@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"sso-auth/app/repositories"
 	"sso-auth/app/responses"
 	"sso-auth/app/schemas"
@@ -17,7 +18,7 @@ func NewUserClientLogService() *UserClientLogService {
 	}
 }
 
-func (s *UserClientLogService) List(page, limit, sort string) (*utils.Pagination, error) {
+func (s *UserClientLogService) List(page, limit, sort string, ctx context.Context) (*utils.Pagination, error) {
 	var scan []responses.UserClientLogResponse
 	paginateRequest := utils.PaginationRequest{
 		Page:  page,
@@ -26,7 +27,7 @@ func (s *UserClientLogService) List(page, limit, sort string) (*utils.Pagination
 	}
 	pPage, pLimit, pSort := paginateRequest.SetPagination()
 
-	res, err := s.userClientLogRepository.List(&scan, pPage, pLimit, pSort)
+	res, err := s.userClientLogRepository.List(&scan, pPage, pLimit, pSort, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{

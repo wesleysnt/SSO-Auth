@@ -1,13 +1,16 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"sso-auth/app/configs"
 	"sso-auth/app/helpers"
 	"sso-auth/app/routes"
+	"sso-auth/app/utils/otel"
 	"sso-auth/cmd/cli/commands"
 
+	"github.com/gofiber/contrib/otelfiber"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gookit/color"
@@ -40,6 +43,19 @@ func main() {
 			return helpers.ResponseApiError(ctx, err.Error(), 500, nil)
 		},
 	})
+
+	ctx := context.TODO()
+	otel.Init(ctx, "")
+	defer otel.Tp.Shutdown(ctx)
+
+	if otel.Tp != nil {
+		app.Use(otelfiber.Middleware(
+			otelfiber.WithTracerProvider(otel.Tp),
+			otelfiber.WithSpanNameFormatter(func(c *fiber.Ctx) string {
+				return c.Path() + " - " + c.Method()
+			}),
+		))
+	}
 	app.Use(logger.New(logger.Config{
 		Format: "[${ip}]:${port} ${status} - ${method} ${path}\n",
 	}))

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"sso-auth/app/facades"
 	"sso-auth/app/helpers"
@@ -11,6 +12,7 @@ import (
 	"sso-auth/app/schemas"
 	oauth2authorizeservices "sso-auth/app/services/oauth2_authorization_services"
 	"sso-auth/app/utils"
+	"sso-auth/app/utils/otel"
 	"sync"
 	"time"
 
@@ -41,21 +43,22 @@ func NewOAuth2Service() *OAuth2Service {
 	}
 }
 
-func (s *OAuth2Service) Login(request *requests.OAuth2LoginRequest) (res any, err error) {
+func (s *OAuth2Service) Login(request *requests.OAuth2LoginRequest, ctx context.Context) (res any, err error) {
 
+	ctxLogin, span := otel.StartNewTrace(ctx, "Starting SSO Login")
+	defer otel.EndSpan(span)
 	switch request.GrantType {
 	case requests.GrantTypePasswordCredential:
-		res, err = s.passwordCredentialService.Login(request)
-
+		res, err = s.passwordCredentialService.Login(request, ctxLogin)
 	case requests.GrantTypeAuthCode:
-		res, err = s.authCodeService.Login(request)
+		res, err = s.authCodeService.Login(request, ctxLogin)
 	}
 	return
 }
 
-func (s *OAuth2Service) Register(data *requests.OAuth2Request) (*responses.OtpResponse, error) {
+func (s *OAuth2Service) Register(data *requests.OAuth2Request, ctx context.Context) (*responses.OtpResponse, error) {
 
-	err := s.authRepository.CheckEmailExists(data.Email, &models.User{})
+	err := s.authRepository.CheckEmailExists(data.Email, &models.User{}, ctx)
 
 	if err == nil {
 		return nil, &schemas.ResponseApiError{
@@ -80,7 +83,7 @@ func (s *OAuth2Service) Register(data *requests.OAuth2Request) (*responses.OtpRe
 		Phone:    data.Phone,
 	}
 
-	err = s.authRepository.CreateUser(&user)
+	err = s.authRepository.CreateUser(&user, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -107,7 +110,7 @@ func (s *OAuth2Service) Register(data *requests.OAuth2Request) (*responses.OtpRe
 			fmt.Println("[FAILED][SEND][OTP][EMAIL] %v \n", errMail)
 		}
 
-		_, errOtp := otpHelper.Save(user.ID, otpCode, uniqueCode)
+		_, errOtp := otpHelper.Save(user.ID, otpCode, uniqueCode, ctx)
 
 		if errOtp != nil {
 			fmt.Println("[FAILED][OTP][ERROR] %v \n", errOtp)
@@ -121,9 +124,9 @@ func (s *OAuth2Service) Register(data *requests.OAuth2Request) (*responses.OtpRe
 	}, nil
 }
 
-func (s *OAuth2Service) VerifOtp(request *requests.VerifOtp) (*responses.VerifOtpResponse, error) {
+func (s *OAuth2Service) VerifOtp(request *requests.VerifOtp, ctx context.Context) (*responses.VerifOtpResponse, error) {
 	var user models.User
-	err := s.authRepository.CheckEmailExists(request.Email, &user)
+	err := s.authRepository.CheckEmailExists(request.Email, &user, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -133,7 +136,7 @@ func (s *OAuth2Service) VerifOtp(request *requests.VerifOtp) (*responses.VerifOt
 	}
 
 	otpHelper := helpers.NewOtp()
-	valid, err := otpHelper.IsOtpValid(request.UniqueCode, request.Otp)
+	valid, err := otpHelper.IsOtpValid(request.UniqueCode, request.Otp, ctx)
 
 	if !valid {
 		return nil, &schemas.ResponseApiError{
@@ -145,7 +148,7 @@ func (s *OAuth2Service) VerifOtp(request *requests.VerifOtp) (*responses.VerifOt
 	tx := s.txRepo.Begin()
 	defer tx.Commit()
 
-	err = s.authRepository.UpdateWithTx(tx, &models.User{IsActive: true}, user.ID)
+	err = s.authRepository.UpdateWithTx(tx, &models.User{IsActive: true}, user.ID, ctx)
 
 	if err != nil {
 		s.txRepo.Rollback(tx)
@@ -162,10 +165,10 @@ func (s *OAuth2Service) VerifOtp(request *requests.VerifOtp) (*responses.VerifOt
 	}, nil
 }
 
-func (s *OAuth2Service) IsLoggedIn(request *requests.IsLoggedInRequest) (*responses.IsLoggedInResponse, error) {
+func (s *OAuth2Service) IsLoggedIn(request *requests.IsLoggedInRequest, ctx context.Context) (*responses.IsLoggedInResponse, error) {
 	var clientData models.Client
 
-	err := s.clientRepository.GetByClientId(&clientData, request.ClientId)
+	err := s.clientRepository.GetByClientId(&clientData, request.ClientId, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -174,7 +177,7 @@ func (s *OAuth2Service) IsLoggedIn(request *requests.IsLoggedInRequest) (*respon
 		}
 	}
 
-	accessToken, err := s.accessTokenRepository.GetByTokenAndClient(request.Token, clientData.ID)
+	accessToken, err := s.accessTokenRepository.GetByTokenAndClient(request.Token, clientData.ID, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -183,7 +186,7 @@ func (s *OAuth2Service) IsLoggedIn(request *requests.IsLoggedInRequest) (*respon
 		}
 	}
 
-	_, err = facades.ParseToken(accessToken.Token, clientData.Secret)
+	_, err = facades.ParseToken(accessToken.Token, clientData.Secret, ctx)
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorBadRequest,
@@ -191,7 +194,7 @@ func (s *OAuth2Service) IsLoggedIn(request *requests.IsLoggedInRequest) (*respon
 		}
 	}
 
-	userId, _ := facades.GetUserIdFromToken(accessToken.Token, clientData.Secret)
+	userId, _ := facades.GetUserIdFromToken(accessToken.Token, clientData.Secret, ctx)
 
 	authCode := facades.RandomString(64)
 
@@ -201,7 +204,7 @@ func (s *OAuth2Service) IsLoggedIn(request *requests.IsLoggedInRequest) (*respon
 		ClientId:   clientData.ID,
 		UserId:     userId,
 	}
-	err = s.authCodeRepository.Create(&authCodeData)
+	err = s.authCodeRepository.Create(&authCodeData, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -216,9 +219,9 @@ func (s *OAuth2Service) IsLoggedIn(request *requests.IsLoggedInRequest) (*respon
 	}, nil
 }
 
-func (s *OAuth2Service) RequestForgotPassword(request *requests.RequestForgotPasswordRequest) error {
+func (s *OAuth2Service) RequestForgotPassword(request *requests.RequestForgotPasswordRequest, ctx context.Context) error {
 	var userData models.User
-	err := s.authRepository.CheckEmailExists(request.Email, &userData)
+	err := s.authRepository.CheckEmailExists(request.Email, &userData, ctx)
 
 	if err != nil {
 		return &schemas.ResponseApiError{
@@ -233,7 +236,7 @@ func (s *OAuth2Service) RequestForgotPassword(request *requests.RequestForgotPas
 		UserId:     userData.ID,
 		Token:      token,
 		ExpiryTime: time.Now().Add(time.Minute * 10),
-	})
+	}, ctx)
 
 	if err != nil {
 		return &schemas.ResponseApiError{
@@ -261,9 +264,9 @@ func (s *OAuth2Service) RequestForgotPassword(request *requests.RequestForgotPas
 	return nil
 }
 
-func (s *OAuth2Service) ResetPassword(request *requests.ResetPasswordRequest) error {
+func (s *OAuth2Service) ResetPassword(request *requests.ResetPasswordRequest, ctx context.Context) error {
 	var forgotPasswordToken models.ForgotPasswordToken
-	err := s.forgotPasswordToken.FindByToken(request.Token, &forgotPasswordToken)
+	err := s.forgotPasswordToken.FindByToken(request.Token, &forgotPasswordToken, ctx)
 
 	if err != nil {
 		return &schemas.ResponseApiError{
@@ -279,7 +282,7 @@ func (s *OAuth2Service) ResetPassword(request *requests.ResetPasswordRequest) er
 		}
 	}
 
-	err = s.authRepository.UpdatePassword(forgotPasswordToken.UserId, request.Password)
+	err = s.authRepository.UpdatePassword(forgotPasswordToken.UserId, request.Password, ctx)
 
 	if err != nil {
 		return &schemas.ResponseApiError{
@@ -288,7 +291,7 @@ func (s *OAuth2Service) ResetPassword(request *requests.ResetPasswordRequest) er
 		}
 	}
 
-	err = s.forgotPasswordToken.UpdateIsUsed(forgotPasswordToken.Token)
+	err = s.forgotPasswordToken.UpdateIsUsed(forgotPasswordToken.Token, ctx)
 	if err != nil {
 		return &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorBadRequest,

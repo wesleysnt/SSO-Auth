@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"sso-auth/app/facades"
 	"sso-auth/app/models"
 	"sso-auth/app/utils"
@@ -18,17 +19,17 @@ func NewRefreshTokenRepository() *RefreshTokenRepository {
 	}
 }
 
-func (r *RefreshTokenRepository) Create(data *models.RefreshToken) error {
-	res := r.orm.Create(&data)
+func (r *RefreshTokenRepository) Create(data *models.RefreshToken, ctx context.Context) error {
+	res := r.orm.WithContext(ctx).Create(&data)
 	return res.Error
 }
 
-func (r *RefreshTokenRepository) GetHistory(scan any, page, limit int, sort string) (*utils.Pagination, error) {
+func (r *RefreshTokenRepository) GetHistory(scan any, page, limit int, sort string, ctx context.Context) (*utils.Pagination, error) {
 	var pagination utils.Pagination
 
 	var paginate func(methods *gorm.DB) *gorm.DB
 
-	q := r.orm.Model(&models.RefreshToken{})
+	q := r.orm.WithContext(ctx).Model(&models.RefreshToken{})
 
 	paginate = pagination.SetLimit(limit).SetPage(page).SetSort(sort).Pagination(q)
 
@@ -37,9 +38,9 @@ func (r *RefreshTokenRepository) GetHistory(scan any, page, limit int, sort stri
 	return &pagination, res.Error
 }
 
-func (r *RefreshTokenRepository) Check(token string, clientId, userId uint) error {
+func (r *RefreshTokenRepository) Check(token string, clientId, userId uint, ctx context.Context) error {
 	var refreshToken models.RefreshToken
-	res := r.orm.Where("token = ? and client_id = ? and user_id = ?", token, clientId, userId).First(&refreshToken)
+	res := r.orm.WithContext(ctx).Where("token = ? and client_id = ? and user_id = ?", token, clientId, userId).First(&refreshToken)
 	if res.Error != nil {
 		return res.Error
 	}

@@ -32,7 +32,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		return helpers.ResponseApiBadRequest(c, err.Error(), nil)
 	}
 
-	res, errLogin := h.authService.Login(&data)
+	res, errLogin := h.authService.Login(&data, c.UserContext())
 
 	if errLogin != nil {
 		respErr := errLogin.(*schemas.ResponseApiError)
