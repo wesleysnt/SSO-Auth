@@ -33,7 +33,7 @@ func (h *TokenHandler) Token(c *fiber.Ctx) (err error) {
 
 	}
 
-	res, err := h.tokenService.Token(&data)
+	res, err := h.tokenService.Token(&data, c.UserContext())
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)
 		catchErr := helpers.CatchErrorResponseApi(respErr)
@@ -48,7 +48,7 @@ func (h *TokenHandler) ValidateToken(c *fiber.Ctx) (err error) {
 
 	c.BodyParser(&data)
 
-	res, err := h.tokenService.ValidateToken(&data)
+	res, err := h.tokenService.ValidateToken(&data, c.UserContext())
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)
 		catchErr := helpers.CatchErrorResponseApi(respErr)
@@ -63,7 +63,7 @@ func (h *TokenHandler) RefreshToken(c *fiber.Ctx) (err error) {
 
 	c.BodyParser(&data)
 
-	res, err := h.tokenService.RefreshToken(&data)
+	res, err := h.tokenService.RefreshToken(&data, c.UserContext())
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)
 		catchErr := helpers.CatchErrorResponseApi(respErr)

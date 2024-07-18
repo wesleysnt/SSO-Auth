@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"sso-auth/app/facades"
 	"sso-auth/app/http/requests"
 	"sso-auth/app/models"
@@ -20,7 +21,7 @@ func NewClientService() *ClientService {
 	}
 }
 
-func (s *ClientService) Create(request *requests.ClientRequest) error {
+func (s *ClientService) Create(request *requests.ClientRequest, ctx context.Context) error {
 
 	data := models.Client{
 		Name:        request.Name,
@@ -28,7 +29,7 @@ func (s *ClientService) Create(request *requests.ClientRequest) error {
 		RedirectUri: request.RedirectUri,
 	}
 
-	errCreate := s.clientRepository.Create(&data)
+	errCreate := s.clientRepository.Create(&data, ctx)
 
 	if errCreate != nil {
 		return &schemas.ResponseApiError{
@@ -40,7 +41,7 @@ func (s *ClientService) Create(request *requests.ClientRequest) error {
 	return nil
 }
 
-func (s *ClientService) List(page, limit, sort string) (*utils.Pagination, error) {
+func (s *ClientService) List(page, limit, sort string, ctx context.Context) (*utils.Pagination, error) {
 	var scan []models.Client
 	var resp []responses.ClientDetail
 	paginateRequest := utils.PaginationRequest{
@@ -50,7 +51,7 @@ func (s *ClientService) List(page, limit, sort string) (*utils.Pagination, error
 	}
 	pPage, pLimit, pSort := paginateRequest.SetPagination()
 
-	res, err := s.clientRepository.List(&scan, pPage, pLimit, pSort)
+	res, err := s.clientRepository.List(&scan, pPage, pLimit, pSort, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -73,9 +74,9 @@ func (s *ClientService) List(page, limit, sort string) (*utils.Pagination, error
 	return res, nil
 }
 
-func (s *ClientService) Detail(clientId uint) (res *responses.ClientDetail, err error) {
+func (s *ClientService) Detail(clientId uint, ctx context.Context) (res *responses.ClientDetail, err error) {
 	var scan responses.ClientDetail
-	err = s.clientRepository.Detail(&scan, clientId)
+	err = s.clientRepository.Detail(&scan, clientId, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -87,10 +88,10 @@ func (s *ClientService) Detail(clientId uint) (res *responses.ClientDetail, err 
 	return
 }
 
-func (s *ClientService) Update(clientId uint, request *requests.ClientRequest) error {
+func (s *ClientService) Update(clientId uint, request *requests.ClientRequest, ctx context.Context) error {
 	// check client
 	var clientData models.Client
-	err := s.clientRepository.GetById(&clientData, clientId)
+	err := s.clientRepository.GetById(&clientData, clientId, ctx)
 	if err != nil {
 		return &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorNotFound,
@@ -104,7 +105,7 @@ func (s *ClientService) Update(clientId uint, request *requests.ClientRequest) e
 		RedirectUri: request.RedirectUri,
 	}
 
-	err = s.clientRepository.Update(data, clientId)
+	err = s.clientRepository.Update(data, clientId, ctx)
 
 	if err != nil {
 		return &schemas.ResponseApiError{
@@ -119,9 +120,9 @@ func (s *ClientService) GenerateSecret() string {
 	return facades.RandomString(32)
 }
 
-func (s *ClientService) Delete(clientId uint) error {
+func (s *ClientService) Delete(clientId uint, ctx context.Context) error {
 	var clientData models.Client
-	err := s.clientRepository.GetById(&clientData, clientId)
+	err := s.clientRepository.GetById(&clientData, clientId, ctx)
 	if err != nil {
 		return &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorNotFound,
@@ -129,7 +130,7 @@ func (s *ClientService) Delete(clientId uint) error {
 		}
 	}
 
-	err = s.clientRepository.Delete(clientId)
+	err = s.clientRepository.Delete(clientId, ctx)
 
 	if err != nil {
 		return &schemas.ResponseApiError{

@@ -56,7 +56,7 @@ func (h *OAuth2Handler) Login(c *fiber.Ctx) (err error) {
 		return helpers.ResponseApiBadRequest(c, err.Error(), nil)
 
 	}
-	res, err := h.authService.Login(&data)
+	res, err := h.authService.Login(&data, c.UserContext())
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)
 		catchErr := helpers.CatchErrorResponseApi(respErr)
@@ -102,7 +102,7 @@ func (h *OAuth2Handler) IsLoggedIn(c *fiber.Ctx) error {
 		return helpers.ResponseApiBadRequest(c, err.Error(), nil)
 	}
 
-	res, err := h.authService.IsLoggedIn(&data)
+	res, err := h.authService.IsLoggedIn(&data, c.UserContext())
 
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)

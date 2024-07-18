@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"sso-auth/app/facades"
 	"sso-auth/app/models"
 
@@ -17,8 +18,8 @@ func NewAdminRepository() *AdminRepository {
 	}
 }
 
-func (r *AdminRepository) Get(data *models.Admin, email string) error {
-	res := r.orm.Where("email = ?", email).First(data)
+func (r *AdminRepository) Get(data *models.Admin, email string, ctx context.Context) error {
+	res := r.orm.WithContext(ctx).Where("email = ?", email).First(data)
 
 	return res.Error
 }

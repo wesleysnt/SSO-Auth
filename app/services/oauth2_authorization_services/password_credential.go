@@ -1,6 +1,7 @@
 package oauth2authorizationservices
 
 import (
+	"context"
 	"sso-auth/app/facades"
 	"sso-auth/app/http/requests"
 	"sso-auth/app/models"
@@ -28,9 +29,9 @@ func NewPasswordCredentialService() *PasswordCredetialService {
 	}
 }
 
-func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest) (any, error) {
+func (s *PasswordCredetialService) Login(request *requests.OAuth2LoginRequest, ctx context.Context) (any, error) {
 	var clientData models.Client
-	err := s.clientRepository.GetByClientId(&clientData, request.ClientId)
+	err := s.clientRepository.GetByClientId(&clientData, request.ClientId, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{

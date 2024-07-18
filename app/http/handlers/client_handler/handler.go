@@ -31,7 +31,7 @@ func (h *ClientHandler) Create(c *fiber.Ctx) error {
 		return helpers.ResponseApiBadRequest(c, err.Error(), nil)
 	}
 
-	err = h.clientService.Create(&data)
+	err = h.clientService.Create(&data, c.UserContext())
 
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)
@@ -47,7 +47,7 @@ func (h *ClientHandler) List(c *fiber.Ctx) error {
 	limit := c.Query("limit")
 	sort := c.Query("sort")
 
-	res, err := h.clientService.List(page, limit, sort)
+	res, err := h.clientService.List(page, limit, sort, c.UserContext())
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)
 		catchErr := helpers.CatchErrorResponseApi(respErr)
@@ -64,7 +64,7 @@ func (h *ClientHandler) Detail(c *fiber.Ctx) error {
 		return helpers.ResponseApiBadRequest(c, "Param id is required", nil)
 	}
 
-	res, err := h.clientService.Detail(uint(clientId))
+	res, err := h.clientService.Detail(uint(clientId), c.UserContext())
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)
 		catchErr := helpers.CatchErrorResponseApi(respErr)
@@ -90,7 +90,7 @@ func (h *ClientHandler) Update(c *fiber.Ctx) error {
 		return helpers.ResponseApiBadRequest(c, "Param id is required", nil)
 	}
 
-	err = h.clientService.Update(uint(clientId), &data)
+	err = h.clientService.Update(uint(clientId), &data, c.UserContext())
 
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)
@@ -114,7 +114,7 @@ func (h *ClientHandler) Delete(c *fiber.Ctx) error {
 		return helpers.ResponseApiBadRequest(c, "Param id is required", nil)
 	}
 
-	err := h.clientService.Delete(uint(clientId))
+	err := h.clientService.Delete(uint(clientId), c.UserContext())
 
 	if err != nil {
 		respErr := err.(*schemas.ResponseApiError)

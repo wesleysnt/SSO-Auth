@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"sso-auth/app/facades"
 	"sso-auth/app/helpers"
@@ -41,14 +42,14 @@ func NewOAuth2Service() *OAuth2Service {
 	}
 }
 
-func (s *OAuth2Service) Login(request *requests.OAuth2LoginRequest) (res any, err error) {
+func (s *OAuth2Service) Login(request *requests.OAuth2LoginRequest, ctx context.Context) (res any, err error) {
 
 	switch request.GrantType {
 	case requests.GrantTypePasswordCredential:
-		res, err = s.passwordCredentialService.Login(request)
+		res, err = s.passwordCredentialService.Login(request, ctx)
 
 	case requests.GrantTypeAuthCode:
-		res, err = s.authCodeService.Login(request)
+		res, err = s.authCodeService.Login(request, ctx)
 	}
 	return
 }
@@ -162,10 +163,10 @@ func (s *OAuth2Service) VerifOtp(request *requests.VerifOtp) (*responses.VerifOt
 	}, nil
 }
 
-func (s *OAuth2Service) IsLoggedIn(request *requests.IsLoggedInRequest) (*responses.IsLoggedInResponse, error) {
+func (s *OAuth2Service) IsLoggedIn(request *requests.IsLoggedInRequest, ctx context.Context) (*responses.IsLoggedInResponse, error) {
 	var clientData models.Client
 
-	err := s.clientRepository.GetByClientId(&clientData, request.ClientId)
+	err := s.clientRepository.GetByClientId(&clientData, request.ClientId, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{

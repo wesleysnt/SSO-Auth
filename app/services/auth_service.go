@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"sso-auth/app/facades"
 	"sso-auth/app/http/requests"
 	"sso-auth/app/models"
@@ -8,6 +9,7 @@ import (
 	"sso-auth/app/responses"
 	"sso-auth/app/schemas"
 	"sso-auth/app/utils"
+	"sso-auth/app/utils/otel"
 )
 
 type AuthService struct {
@@ -20,10 +22,15 @@ func NewAuthService() *AuthService {
 	}
 }
 
-func (s *AuthService) Login(request *requests.LoginRequest) (*responses.AdminLoginResponses, error) {
+func (s *AuthService) Login(request *requests.LoginRequest, ctx context.Context) (*responses.AdminLoginResponses, error) {
+	// init otel
+	ctxMain, spanMain := otel.Init(ctx, "Get list transaction reward service: /v1/transaction-reward")
+	defer otel.Tp.Shutdown(ctx)
+	defer spanMain.End()
+
 	// check admin email
 	var adminData models.Admin
-	err := s.adminRepository.Get(&adminData, request.Email)
+	err := s.adminRepository.Get(&adminData, request.Email, ctxMain)
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorForbidden,

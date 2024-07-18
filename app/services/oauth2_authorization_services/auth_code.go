@@ -1,6 +1,7 @@
 package oauth2authorizationservices
 
 import (
+	"context"
 	"sso-auth/app/facades"
 	"sso-auth/app/http/requests"
 	"sso-auth/app/models"
@@ -33,9 +34,9 @@ func NewAuthCodeService() *AuthCodeService {
 	}
 }
 
-func (s *AuthCodeService) Login(request *requests.OAuth2LoginRequest) (any, error) {
+func (s *AuthCodeService) Login(request *requests.OAuth2LoginRequest, ctx context.Context) (any, error) {
 	var clientData models.Client
-	err := s.clientRepository.GetByClientId(&clientData, request.ClientId)
+	err := s.clientRepository.GetByClientId(&clientData, request.ClientId, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -108,11 +109,11 @@ func (s *AuthCodeService) Login(request *requests.OAuth2LoginRequest) (any, erro
 	return &res, nil
 }
 
-func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.TokenResponse, error) {
+func (s *AuthCodeService) Token(request *requests.TokenRequest, ctx context.Context) (*responses.TokenResponse, error) {
 	var authCode models.AuthCode
 
 	var clientData models.Client
-	err := s.clientRepository.GetByClientId(&clientData, request.ClientId)
+	err := s.clientRepository.GetByClientId(&clientData, request.ClientId, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
@@ -250,7 +251,7 @@ func (s *AuthCodeService) Token(request *requests.TokenRequest) (*responses.Toke
 	return &res, nil
 }
 
-func (s *AuthCodeService) ValidateToken(request *requests.ValidateTokenRequest) (*responses.ValidateTokenResponse, error) {
+func (s *AuthCodeService) ValidateToken(request *requests.ValidateTokenRequest, ctx context.Context) (*responses.ValidateTokenResponse, error) {
 	var codeChallengeData models.CodeChallenge
 	s.codeChallengeRepository.GetChallenge(request.CodeChallengeUniqueCode, &codeChallengeData)
 	if !utils.VerifyCode(request.CodeVerifier, codeChallengeData.Code) {
@@ -268,7 +269,7 @@ func (s *AuthCodeService) ValidateToken(request *requests.ValidateTokenRequest) 
 		}
 	}
 	var clientData models.Client
-	s.clientRepository.GetById(&clientData, tokenData.ClientId)
+	s.clientRepository.GetById(&clientData, tokenData.ClientId, ctx)
 	// Verify secret
 	token, err := facades.ParseToken(request.Token, clientData.Secret)
 

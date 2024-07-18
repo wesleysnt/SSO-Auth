@@ -1,6 +1,7 @@
 package oauth2authorizationservices
 
 import (
+	"context"
 	"sso-auth/app/facades"
 	"sso-auth/app/http/requests"
 	"sso-auth/app/models"
@@ -23,9 +24,9 @@ func NewClientCredentialService() *ClientCredentialService {
 	}
 }
 
-func (s *ClientCredentialService) Token(request *requests.TokenRequest) (*responses.TokenResponse, error) {
+func (s *ClientCredentialService) Token(request *requests.TokenRequest, ctx context.Context) (*responses.TokenResponse, error) {
 	var clientData models.Client
-	err := s.clientRepository.GetByClientId(&clientData, request.ClientId)
+	err := s.clientRepository.GetByClientId(&clientData, request.ClientId, ctx)
 
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
