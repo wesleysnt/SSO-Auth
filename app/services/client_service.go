@@ -64,6 +64,7 @@ func (s *ClientService) List(page, limit, sort string, ctx context.Context) (*ut
 		resp = append(resp, responses.ClientDetail{
 			Id:          v.ID,
 			ClientId:    *v.ClientId,
+			Name:        v.Name,
 			Secret:      v.Secret,
 			RedirectUri: v.RedirectUri,
 		})

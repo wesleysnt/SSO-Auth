@@ -12,7 +12,6 @@ import (
 
 	"github.com/gofiber/contrib/otelfiber"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/basicauth"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gookit/color"
 )
@@ -47,12 +46,8 @@ func main() {
 
 	ctx := context.TODO()
 	otel.Init(ctx, "")
+	defer otel.Tp.Shutdown(ctx)
 
-	app.Use(basicauth.New(basicauth.Config{
-		Users: map[string]string{
-			"admin": "secret",
-		},
-	}))
 	app.Use(otelfiber.Middleware(
 		otelfiber.WithTracerProvider(otel.Tp),
 		otelfiber.WithSpanNameFormatter(func(c *fiber.Ctx) string {

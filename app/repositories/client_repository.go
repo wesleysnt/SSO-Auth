@@ -21,22 +21,22 @@ func NewClientRepository() *ClientRepository {
 }
 
 func (r *ClientRepository) Create(data *models.Client, ctx context.Context) error {
-	res := r.orm.Create(&data)
+	res := r.orm.WithContext(ctx).Create(&data)
 	return res.Error
 }
 func (r *ClientRepository) GetById(data *models.Client, id uint, ctx context.Context) error {
-	res := r.orm.First(&data, id)
+	res := r.orm.WithContext(ctx).First(&data, id)
 	return res.Error
 }
 
 func (r *ClientRepository) GetByClientId(data *models.Client, clientId string, ctx context.Context) error {
-	res := r.orm.Where("client_id = ?", clientId).First(&data)
+	res := r.orm.WithContext(ctx).Where("client_id = ?", clientId).First(&data)
 	return res.Error
 }
 
 func (r *ClientRepository) CheckClientId(clientId string, ctx context.Context) error {
 	var data *models.Client
-	res := r.orm.Where("client_id = ?", clientId).First(&data)
+	res := r.orm.WithContext(ctx).Where("client_id = ?", clientId).First(&data)
 	return res.Error
 }
 
@@ -57,17 +57,17 @@ func (r *ClientRepository) List(scan *[]models.Client, page, limit int, sort str
 }
 
 func (r *ClientRepository) Detail(scan *responses.ClientDetail, clientId uint, ctx context.Context) error {
-	db := r.orm.First(&models.Client{}, clientId).Scan(scan)
+	db := r.orm.WithContext(ctx).First(&models.Client{}, clientId).Scan(scan)
 	return db.Error
 }
 
 func (r *ClientRepository) Update(data *models.Client, clientId uint, ctx context.Context) error {
-	db := r.orm.Model(&models.Client{}).Where("id", clientId).Updates(data)
+	db := r.orm.WithContext(ctx).Model(&models.Client{}).Where("id", clientId).Updates(data)
 
 	return db.Error
 }
 
 func (r *ClientRepository) Delete(clientId uint, ctx context.Context) error {
-	db := r.orm.Delete(&models.Client{}, clientId)
+	db := r.orm.WithContext(ctx).Delete(&models.Client{}, clientId)
 	return db.Error
 }

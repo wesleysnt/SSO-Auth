@@ -23,14 +23,14 @@ func NewAuthService() *AuthService {
 }
 
 func (s *AuthService) Login(request *requests.LoginRequest, ctx context.Context) (*responses.AdminLoginResponses, error) {
-	// init otel
-	ctxMain, spanMain := otel.Init(ctx, "Get list transaction reward service: /v1/transaction-reward")
-	defer otel.Tp.Shutdown(ctx)
-	defer spanMain.End()
+
+	ctxLogin, span := otel.Tracer.Start(ctx, "Start Login")
+	defer span.End()
 
 	// check admin email
+	span.AddEvent("Checking user account")
 	var adminData models.Admin
-	err := s.adminRepository.Get(&adminData, request.Email, ctxMain)
+	err := s.adminRepository.Get(&adminData, request.Email, ctxLogin)
 	if err != nil {
 		return nil, &schemas.ResponseApiError{
 			Status:  schemas.ApiErrorForbidden,
@@ -38,6 +38,7 @@ func (s *AuthService) Login(request *requests.LoginRequest, ctx context.Context)
 		}
 	}
 
+	span.AddEvent("Checking user password")
 	auth := utils.CheckPasswordHash(request.Password, adminData.Password)
 
 	if !auth {
@@ -48,6 +49,7 @@ func (s *AuthService) Login(request *requests.LoginRequest, ctx context.Context)
 	}
 
 	// Generate access token
+	span.AddEvent("Generating access token")
 	tokenString, err := facades.GenerateToken("", "", adminData.ID, 2)
 
 	if err != nil {
@@ -68,6 +70,7 @@ func (s *AuthService) Login(request *requests.LoginRequest, ctx context.Context)
 
 	tokenExpired, _ := token.Claims.GetExpirationTime()
 
+	span.AddEvent("Generating response")
 	res := responses.AdminLoginResponses{
 		Id:    adminData.ID,
 		Email: adminData.Email,
